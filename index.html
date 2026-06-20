@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#1C1C1E" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Resguardos" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<title>Firma de resguardos</title>
+<style>
+  :root{
+    --bg:#FAFAF9; --surface:#FFFFFF; --surface-2:#F5F5F4;
+    --ink:#1C1C1E; --muted:#78716C; --faint:#A8A29E;
+    --border:#E7E5E4; --border-strong:#D6D3D1;
+    --amber:#D97706; --amber-bg:#FEF3C7;
+    --green:#15803D; --green-bg:#DCFCE7;
+    --blue:#1D4ED8; --blue-bg:#DBEAFE;
+    --red:#DC2626;  --red-bg:#FEE2E2;
+    --radius:14px; --radius-sm:10px; --radius-xs:8px;
+    --shadow:0 1px 2px rgba(28,28,30,.05), 0 8px 24px -16px rgba(28,28,30,.18);
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:var(--sans); color:var(--ink); background:var(--bg);
+    font-size:15px; line-height:1.45; overscroll-behavior:none;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  button{ font-family:inherit; font-size:inherit; cursor:pointer; border:none; background:none; color:inherit; }
+  button:focus-visible, [tabindex]:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; border-radius:6px; }
+  .mono{ font-family:var(--mono); }
+
+  /* ---------- App shell ---------- */
+  #app{ max-width:880px; margin:0 auto; padding:0 16px 96px; }
+
+  header.bar{
+    position:sticky; top:0; z-index:20; background:rgba(250,250,249,.86);
+    backdrop-filter:saturate(1.4) blur(10px);
+    -webkit-backdrop-filter:saturate(1.4) blur(10px);
+    padding:14px 0 10px; margin:0 -16px 4px; padding-left:16px; padding-right:16px;
+    border-bottom:1px solid var(--border);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .glyph{ width:30px; height:30px; flex:0 0 auto; }
+  .brand h1{ font-size:17px; font-weight:650; letter-spacing:-.01em; margin:0; }
+  .brand .sub{ font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:.04em; text-transform:uppercase; }
+
+  .toolbar{ display:flex; gap:8px; margin-top:12px; }
+  .search{ position:relative; flex:1; }
+  .search input{
+    width:100%; border:1px solid var(--border-strong); background:var(--surface);
+    border-radius:var(--radius-sm); padding:10px 12px 10px 36px; font-size:15px; color:var(--ink);
+  }
+  .search input::placeholder{ color:var(--faint); }
+  .search svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--faint); }
+  .btn{
+    display:inline-flex; align-items:center; gap:7px; justify-content:center;
+    border-radius:var(--radius-sm); padding:10px 14px; font-weight:550; white-space:nowrap;
+    border:1px solid transparent; transition:transform .04s ease, background .12s ease;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn-primary{ background:var(--ink); color:#fff; }
+  .btn-primary:hover{ background:#000; }
+  .btn-ghost{ background:var(--surface); border-color:var(--border-strong); color:var(--ink); }
+  .btn-ghost:hover{ background:var(--surface-2); }
+  .btn-sm{ padding:8px 11px; font-size:13.5px; }
+  .btn-icon{ padding:10px; }
+
+  /* ---------- Dashboard ---------- */
+  .dash{ display:flex; gap:8px; margin:14px 0 6px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+  .dash::-webkit-scrollbar{ display:none; }
+  .stat{
+    flex:1 0 auto; min-width:104px; text-align:left; background:var(--surface);
+    border:1px solid var(--border); border-radius:var(--radius); padding:11px 13px;
+    display:flex; flex-direction:column; gap:2px; transition:border-color .12s ease, box-shadow .12s ease;
+  }
+  .stat:hover{ box-shadow:var(--shadow); }
+  .stat[aria-pressed="true"]{ border-color:var(--ink); box-shadow:0 0 0 1px var(--ink) inset; }
+  .stat .n{ font-family:var(--mono); font-size:23px; font-weight:600; letter-spacing:-.02em; line-height:1; }
+  .stat .l{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); }
+  .swatch{ width:9px; height:9px; border-radius:3px; flex:0 0 auto; }
+  .sw-pend{ background:var(--amber); } .sw-firm{ background:var(--green); }
+  .sw-exp{ background:var(--blue); } .sw-all{ background:var(--ink); }
+
+  .listmeta{ display:flex; align-items:center; justify-content:space-between; margin:14px 2px 8px; }
+  .listmeta .count{ font-family:var(--mono); font-size:12px; color:var(--faint); letter-spacing:.03em; }
+  .listmeta .trash-link{ font-size:12.5px; color:var(--muted); display:inline-flex; gap:5px; align-items:center; }
+  .listmeta .trash-link:hover{ color:var(--red); }
+
+  .queuebar{
+    display:none; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--blue-bg); border:1px solid #BFDBFE; color:var(--blue);
+    border-radius:var(--radius); padding:9px 9px 9px 13px; margin:0 0 10px;
+  }
+  .queuebar.show{ display:flex; }
+  .queuebar span{ font-size:13.5px; font-weight:550; }
+
+  /* ---------- Cards ---------- */
+  .list{ display:flex; flex-direction:column; gap:9px; }
+  .card{
+    position:relative; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:13px 14px 13px 18px; overflow:hidden;
+    display:flex; flex-direction:column; gap:11px;
+  }
+  .card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--border-strong); }
+  .card.s-pendiente::before{ background:var(--amber); }
+  .card.s-firmado::before{ background:var(--green); }
+  .card.s-por_exportar::before{ background:var(--blue); }
+  .card.s-eliminado::before{ background:var(--red); }
+  .card-top{ display:flex; align-items:flex-start; gap:12px; }
+  .card-main{ flex:1; min-width:0; }
+  .card .name{ font-weight:600; font-size:15px; letter-spacing:-.005em; word-break:break-word; }
+  .card .meta{ font-family:var(--mono); font-size:11.5px; color:var(--faint); margin-top:3px; letter-spacing:.02em; }
+  .card .meta b{ color:var(--muted); font-weight:600; }
+  .doc-ico{ width:34px; height:42px; flex:0 0 auto; }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:6px; font-family:var(--mono);
+    font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+    padding:4px 9px; border-radius:999px; white-space:nowrap;
+  }
+  .badge .dot{ width:7px; height:7px; border-radius:50%; }
+  .b-pendiente{ background:var(--amber-bg); color:#92400E; } .b-pendiente .dot{ background:var(--amber); }
+  .b-firmado{ background:var(--green-bg); color:#166534; } .b-firmado .dot{ background:var(--green); }
+  .b-por_exportar{ background:var(--blue-bg); color:#1E40AF; } .b-por_exportar .dot{ background:var(--blue); }
+  .b-eliminado{ background:var(--red-bg); color:#991B1B; } .b-eliminado .dot{ background:var(--red); }
+
+  .actions{ display:flex; flex-wrap:wrap; gap:7px; }
+  .actions .btn{ padding:8px 12px; font-size:13.5px; }
+  .danger{ color:var(--red); }
+  .danger:hover{ background:var(--red-bg); border-color:#FCA5A5; }
+
+  /* ---------- Empty ---------- */
+  .empty{ text-align:center; padding:54px 24px; color:var(--muted); }
+  .empty .big{ width:54px; height:54px; margin:0 auto 14px; color:var(--border-strong); }
+  .empty h2{ font-size:17px; color:var(--ink); margin:0 0 6px; font-weight:600; }
+  .empty p{ margin:0 0 18px; font-size:14px; }
+
+  /* ---------- Signing overlay ---------- */
+  .sheet{
+    position:fixed; inset:0; z-index:60; background:var(--bg); display:none;
+    flex-direction:column; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .sheet.show{ display:flex; }
+  .sheet-head{
+    display:flex; align-items:center; gap:10px; padding:11px 14px; border-bottom:1px solid var(--border);
+    background:var(--surface);
+  }
+  .sheet-head .title{ flex:1; min-width:0; }
+  .sheet-head .title .t{ font-weight:600; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sheet-head .title .s{ font-family:var(--mono); font-size:11px; color:var(--faint); }
+
+  .thumbs{
+    display:flex; gap:10px; overflow-x:auto; padding:11px 14px; background:var(--surface-2);
+    border-bottom:1px solid var(--border); scrollbar-width:thin;
+  }
+  .thumb{
+    position:relative; flex:0 0 auto; border:2px solid var(--border-strong); border-radius:8px;
+    overflow:hidden; background:#fff; padding:0; line-height:0; transition:border-color .1s ease;
+  }
+  .thumb canvas{ display:block; }
+  .thumb[aria-pressed="true"]{ border-color:var(--ink); }
+  .thumb .pg{ position:absolute; left:4px; bottom:4px; font-family:var(--mono); font-size:10px;
+    background:rgba(28,28,30,.78); color:#fff; padding:1px 5px; border-radius:5px; }
+  .thumb .sig-dot{ position:absolute; top:4px; right:4px; width:10px; height:10px; border-radius:50%;
+    background:var(--green); border:1.5px solid #fff; display:none; }
+  .thumb.has-sig .sig-dot{ display:block; }
+
+  .stage{
+    flex:1; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center;
+    background:repeating-conic-gradient(#f1f0ee 0% 25%, #fafaf9 0% 50%) 50% / 22px 22px;
+  }
+  .page-wrap{ position:relative; box-shadow:0 6px 30px -10px rgba(0,0,0,.3); background:#fff; }
+  #pageCanvas{ display:block; }
+  #inkCanvas{ position:absolute; inset:0; touch-action:none; cursor:crosshair; }
+  .stage .hint{
+    position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+    background:rgba(28,28,30,.82); color:#fff; font-size:12.5px; padding:7px 13px; border-radius:999px;
+    pointer-events:none; transition:opacity .3s ease;
+  }
+
+  .sign-tools{
+    display:flex; align-items:center; gap:10px; padding:11px 14px; border-top:1px solid var(--border);
+    background:var(--surface); flex-wrap:wrap;
+  }
+  .pentip{ display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--muted); }
+  .pentip input[type=range]{ width:108px; accent-color:var(--ink); }
+  .grow{ flex:1; }
+
+  /* ---------- Toast & dialog ---------- */
+  #toast{
+    position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:11px 17px; border-radius:999px; font-size:13.5px; font-weight:550;
+    z-index:90; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; max-width:90vw; text-align:center;
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .modal-bg{ position:fixed; inset:0; background:rgba(28,28,30,.4); z-index:80; display:none; align-items:center; justify-content:center; padding:24px; }
+  .modal-bg.show{ display:flex; }
+  .modal{ background:var(--surface); border-radius:16px; padding:20px; max-width:340px; width:100%; box-shadow:var(--shadow); }
+  .modal h3{ margin:0 0 6px; font-size:16px; }
+  .modal p{ margin:0 0 18px; font-size:14px; color:var(--muted); }
+  .modal .row{ display:flex; gap:9px; justify-content:flex-end; }
+
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); border:0; }
+
+  @media (max-width:520px){
+    .toolbar .btn span.lbl{ display:none; }
+    .stat{ min-width:92px; }
+  }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="bar">
+    <div class="brand">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="30" height="30" rx="8" fill="#1C1C1E"/>
+        <path d="M8 21c3-1 4.5-9 6-9s1 7 2.5 7S19 12 21 12s2 5 3 5" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="24" cy="22.5" r="1.6" fill="#fff"/>
+      </svg>
+      <div>
+        <h1>Resguardos</h1>
+        <div class="sub">Firma digital · offline</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search" type="search" placeholder="Buscar resguardo…" autocomplete="off" />
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnFolder" title="Importar una carpeta de PDFs">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span class="lbl">Carpeta</span>
+      </button>
+      <button class="btn btn-primary btn-sm" id="btnLoad">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0 4 4m-4-4-4 4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        <span class="lbl">Cargar PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="dash" id="dash" aria-label="Resumen de resguardos">
+    <button class="stat" data-filter="todos" aria-pressed="true">
+      <span class="n mono" id="c-todos">0</span>
+      <span class="l"><span class="swatch sw-all"></span>Todos</span>
+    </button>
+    <button class="stat" data-filter="pendiente" aria-pressed="false">
+      <span class="n mono" id="c-pendiente">0</span>
+      <span class="l"><span class="swatch sw-pend"></span>Pendientes</span>
+    </button>
+    <button class="stat" data-filter="firmado" aria-pressed="false">
+      <span class="n mono" id="c-firmado">0</span>
+      <span class="l"><span class="swatch sw-firm"></span>Firmados</span>
+    </button>
+    <button class="stat" data-filter="por_exportar" aria-pressed="false">
+      <span class="n mono" id="c-por_exportar">0</span>
+      <span class="l"><span class="swatch sw-exp"></span>Por exportar</span>
+    </button>
+  </section>
+
+  <div class="queuebar" id="queuebar">
+    <span id="queuetext">0 en cola para exportar</span>
+    <button class="btn btn-sm" style="background:#fff;color:var(--blue);border:1px solid #BFDBFE" id="btnExportAll">Exportar todos</button>
+  </div>
+
+  <div class="listmeta">
+    <span class="count" id="listcount">0 resguardos</span>
+    <button class="trash-link" id="btnTrash" hidden>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      Papelera (<span id="trashcount">0</span>)
+    </button>
+  </div>
+
+  <div class="list" id="list"></div>
+</div>
+
+<!-- Signing sheet -->
+<div class="sheet" id="sheet" aria-hidden="true">
+  <div class="sheet-head">
+    <button class="btn btn-icon btn-ghost" id="btnClose" aria-label="Cerrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="title">
+      <div class="t" id="sheetName">—</div>
+      <div class="s" id="sheetSub">—</div>
+    </div>
+    <button class="btn btn-primary btn-sm" id="btnSaveSig">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="m5 12 5 5 9-11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Guardar firma
+    </button>
+  </div>
+  <div class="thumbs" id="thumbs"></div>
+  <div class="stage" id="stage">
+    <div class="page-wrap" id="pageWrap">
+      <canvas id="pageCanvas"></canvas>
+      <canvas id="inkCanvas"></canvas>
+    </div>
+    <div class="hint" id="signHint">Firma con el dedo o la pluma sobre la hoja</div>
+  </div>
+  <div class="sign-tools">
+    <div class="pentip">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 21l3-1 11-11-2-2L4 18l-1 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m14 5 3-3 4 4-3 3" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      Trazo
+      <input id="penWidth" type="range" min="1" max="6" step="0.5" value="2.4" />
+    </div>
+    <div class="grow"></div>
+    <button class="btn btn-ghost btn-sm" id="btnUndo">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 7H5V3M5 7a8 8 0 1 1-2 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Deshacer
+    </button>
+    <button class="btn btn-ghost btn-sm" id="btnClear">Limpiar hoja</button>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 id="modalTitle">Confirmar</h3>
+    <p id="modalText">—</p>
+    <div class="row">
+      <button class="btn btn-ghost btn-sm" id="modalCancel">Cancelar</button>
+      <button class="btn btn-primary btn-sm" id="modalOk">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<input type="file" id="fileInput" accept="application/pdf" multiple class="sr-only" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   pdf.js worker
+============================================================ */
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+/* ============================================================
+   Almacenamiento — IndexedDB con respaldo en memoria
+   (para que la vista previa nunca falle si el navegador
+   bloquea el almacenamiento; al desplegarse persiste de verdad)
+============================================================ */
+const Store = (function(){
+  const DB_NAME = "resguardos-db", STORE = "items", VERSION = 1;
+  let dbPromise = null, mem = null;
+
+  function useMemory(){
+    if (!mem) mem = new Map();
+    return true;
+  }
+  function openDB(){
+    if (mem) return Promise.reject("mem");
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((res, rej)=>{
+      let req;
+      try { req = indexedDB.open(DB_NAME, VERSION); }
+      catch(e){ useMemory(); return rej(e); }
+      req.onupgradeneeded = ()=>{ req.result.createObjectStore(STORE, { keyPath:"id" }); };
+      req.onsuccess = ()=> res(req.result);
+      req.onerror = ()=>{ useMemory(); rej(req.error); };
+    });
+    return dbPromise;
+  }
+  function tx(mode){
+    return openDB().then(db=> db.transaction(STORE, mode).objectStore(STORE));
+  }
+  return {
+    async getAll(){
+      if (mem) return [...mem.values()];
+      try{
+        const os = await tx("readonly");
+        return await new Promise((res,rej)=>{ const r=os.getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error); });
+      }catch(e){ useMemory(); return [...mem.values()]; }
+    },
+    async put(item){
+      if (mem){ mem.set(item.id, item); return item; }
+      try{
+        const os = await tx("readwrite");
+        return await new Promise((res,rej)=>{ const r=os.put(item); r.onsuccess=()=>res(item); r.onerror=()=>rej(r.error); });
+      }catch(e){ useMemory(); mem.set(item.id, item); return item; }
+    },
+    async del(id){
+      if (mem){ mem.delete(id); return; }
+      try{
+        const os = await tx("readwrite");
+        return await new Promise((res,rej)=>{ const r=os.delete(id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); });
+      }catch(e){ useMemory(); mem.delete(id); }
+    }
+  };
+})();
+
+/* ============================================================
+   Estado y utilidades
+============================================================ */
+const STATUS = {
+  pendiente:    { label:"Pendiente",    es:"pendiente" },
+  firmado:      { label:"Firmado",      es:"firmado" },
+  por_exportar: { label:"Por exportar", es:"por_exportar" },
+  eliminado:    { label:"Eliminado",    es:"eliminado" },
+};
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+function fmtDate(ts){
+  if(!ts) return "—";
+  const d = new Date(ts);
+  return d.toLocaleDateString("es-MX",{day:"2-digit",month:"short"}) + " " +
+         d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});
+}
+function bytesHuman(n){
+  if(!n && n!==0) return "—";
+  if(n < 1024) return n+" B";
+  if(n < 1048576) return (n/1024).toFixed(0)+" KB";
+  return (n/1048576).toFixed(1)+" MB";
+}
+
+let items = [];          // todos los resguardos
+let filter = "todos";    // filtro activo
+let query = "";          // búsqueda
+let showTrash = false;
+
+/* ============================================================
+   Toast + modal de confirmación
+============================================================ */
+let toastT;
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(()=> t.classList.remove("show"), 2200);
+}
+function confirmDialog(title, text, okLabel){
+  return new Promise(res=>{
+    $("#modalTitle").textContent = title;
+    $("#modalText").textContent = text;
+    $("#modalOk").textContent = okLabel || "Aceptar";
+    const bg = $("#modalBg"); bg.classList.add("show");
+    const done = (v)=>{ bg.classList.remove("show"); $("#modalOk").onclick=null; $("#modalCancel").onclick=null; bg.onclick=null; res(v); };
+    $("#modalOk").onclick = ()=>done(true);
+    $("#modalCancel").onclick = ()=>done(false);
+    bg.onclick = (e)=>{ if(e.target===bg) done(false); };
+  });
+}
+
+/* ============================================================
+   Carga de PDFs (File System Access API + respaldo input)
+============================================================ */
+async function addPdfFile(file){
+  const buf = await file.arrayBuffer();
+  const item = {
+    id: uid(),
+    name: file.name.replace(/\.pdf$/i,""),
+    fileName: file.name,
+    status: "pendiente",
+    size: buf.byteLength,
+    pages: null,
+    pdf: buf,                // ArrayBuffer del original
+    signatures: {},          // { [pageIndex]: pngDataURL }
+    createdAt: Date.now(),
+    signedAt: null,
+    exportedAt: null,
+  };
+  await Store.put(item);
+  return item;
+}
+
+async function loadViaPicker(){
+  if (window.showOpenFilePicker){
+    try{
+      const handles = await window.showOpenFilePicker({
+        multiple:true,
+        types:[{ description:"PDF", accept:{ "application/pdf":[".pdf"] } }],
+      });
+      let added = 0;
+      for (const h of handles){ const f = await h.getFile(); await addPdfFile(f); added++; }
+      if (added){ await refresh(); toast(added===1?"1 PDF cargado":added+" PDFs cargados"); }
+      return;
+    }catch(e){ if(e && e.name==="AbortError") return; /* si no, usa respaldo */ }
+  }
+  $("#fileInput").click();
+}
+
+async function loadViaFolder(){
+  if (window.showDirectoryPicker){
+    try{
+      const dir = await window.showDirectoryPicker();
+      let added = 0;
+      for await (const entry of dir.values()){
+        if (entry.kind==="file" && /\.pdf$/i.test(entry.name)){
+          const f = await entry.getFile(); await addPdfFile(f); added++;
+        }
+      }
+      await refresh();
+      toast(added ? added+" PDFs importados de la carpeta" : "No se encontraron PDFs en la carpeta");
+    }catch(e){ if(e && e.name!=="AbortError") toast("No se pudo abrir la carpeta"); }
+  }else{
+    toast("Tu navegador no permite elegir carpeta — usa Cargar PDF");
+    $("#fileInput").click();
+  }
+}
+
+$("#fileInput").addEventListener("change", async (e)=>{
+  const files = [...e.target.files].filter(f=>/\.pdf$/i.test(f.name));
+  let added = 0;
+  for (const f of files){ await addPdfFile(f); added++; }
+  e.target.value = "";
+  if (added){ await refresh(); toast(added===1?"1 PDF cargado":added+" PDFs cargados"); }
+});
+
+/* ============================================================
+   Render del tablero y la lista
+============================================================ */
+function counts(){
+  const c = { todos:0, pendiente:0, firmado:0, por_exportar:0, eliminado:0 };
+  for (const it of items){
+    if (it.status==="eliminado"){ c.eliminado++; continue; }
+    c.todos++; c[it.status]++;
+  }
+  return c;
+}
+
+function visibleItems(){
+  let arr = items.filter(it => showTrash ? it.status==="eliminado" : it.status!=="eliminado");
+  if (!showTrash && filter!=="todos") arr = arr.filter(it=>it.status===filter);
+  if (query){
+    const q = query.toLowerCase();
+    arr = arr.filter(it => it.name.toLowerCase().includes(q));
+  }
+  return arr.sort((a,b)=> b.createdAt - a.createdAt);
+}
+
+function badge(status){
+  const s = STATUS[status];
+  return `<span class="badge b-${status}"><span class="dot"></span>${s.label}</span>`;
+}
+
+function cardActions(it){
+  if (it.status==="eliminado"){
+    return `<button class="btn btn-ghost" data-act="restore" data-id="${it.id}">Restaurar</button>
+            <button class="btn btn-ghost danger" data-act="purge" data-id="${it.id}">Borrar definitivo</button>`;
+  }
+  let html = `<button class="btn btn-primary" data-act="sign" data-id="${it.id}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 21l3-1 11-11-2-2L4 18l-1 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m14 5 3-3 4 4-3 3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      ${it.status==="pendiente" ? "Firmar" : "Volver a firmar"}</button>`;
+  if (it.status==="firmado"){
+    html += `<button class="btn btn-ghost" data-act="queue" data-id="${it.id}">Marcar por exportar</button>`;
+    html += `<button class="btn btn-ghost" data-act="export" data-id="${it.id}">Exportar</button>`;
+  }
+  if (it.status==="por_exportar"){
+    html += `<button class="btn btn-ghost" data-act="export" data-id="${it.id}">Exportar ahora</button>`;
+    html += `<button class="btn btn-ghost" data-act="unqueue" data-id="${it.id}">Quitar de cola</button>`;
+  }
+  html += `<button class="btn btn-ghost danger" data-act="delete" data-id="${it.id}">Eliminar</button>`;
+  return html;
+}
+
+function render(){
+  const c = counts();
+  $("#c-todos").textContent = c.todos;
+  $("#c-pendiente").textContent = c.pendiente;
+  $("#c-firmado").textContent = c.firmado;
+  $("#c-por_exportar").textContent = c.por_exportar;
+
+  document.querySelectorAll(".stat").forEach(b=>{
+    b.setAttribute("aria-pressed", String(!showTrash && b.dataset.filter===filter));
+  });
+
+  // cola de exportación
+  const qb = $("#queuebar");
+  if (c.por_exportar > 0 && !showTrash){ qb.classList.add("show"); $("#queuetext").textContent = c.por_exportar + (c.por_exportar===1?" resguardo en cola":" resguardos en cola"); }
+  else qb.classList.remove("show");
+
+  // papelera
+  const tb = $("#btnTrash");
+  $("#trashcount").textContent = c.eliminado;
+  tb.hidden = c.eliminado===0 && !showTrash;
+  tb.classList.toggle("danger", showTrash);
+  tb.querySelector("svg")?.setAttribute("aria-hidden","true");
+
+  const arr = visibleItems();
+  $("#listcount").textContent = showTrash
+    ? (c.eliminado + (c.eliminado===1?" en papelera":" en papelera"))
+    : (arr.length + (arr.length===1?" resguardo":" resguardos"));
+
+  const list = $("#list");
+  if (arr.length === 0){
+    list.innerHTML = emptyState();
+    bindEmpty();
+    return;
+  }
+  list.innerHTML = arr.map(it=>{
+    const signed = Object.keys(it.signatures||{}).length;
+    return `<article class="card s-${it.status}">
+      <div class="card-top">
+        <svg class="doc-ico" viewBox="0 0 34 42" fill="none" aria-hidden="true">
+          <path d="M5 1h17l7 7v32a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1Z" fill="#fff" stroke="var(--border-strong)" stroke-width="1.4"/>
+          <path d="M22 1v7h7" stroke="var(--border-strong)" stroke-width="1.4" fill="none"/>
+          <path d="M9 30c2-.6 3-6 4-6s.6 4.5 1.6 4.5S17 24 18.4 24s1.3 3.4 2 3.4" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="${signed?1:0}"/>
+          <g stroke="var(--border-strong)" stroke-width="1.3" opacity="${signed?0:1}"><path d="M9 17h16M9 22h16M9 27h10"/></g>
+        </svg>
+        <div class="card-main">
+          <div class="name">${escapeHtml(it.name)}</div>
+          <div class="meta">${bytesHuman(it.size)} · <b>${fmtDate(it.createdAt)}</b>${signed?` · ${signed} ${signed===1?"hoja firmada":"hojas firmadas"}`:""}</div>
+        </div>
+        ${badge(it.status)}
+      </div>
+      <div class="actions">${cardActions(it)}</div>
+    </article>`;
+  }).join("");
+}
+
+function emptyState(){
+  if (showTrash){
+    return `<div class="empty">
+      <svg class="big" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <h2>Papelera vacía</h2><p>Los resguardos eliminados aparecen aquí.</p></div>`;
+  }
+  if (query || filter!=="todos"){
+    return `<div class="empty">
+      <svg class="big" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <h2>Sin resultados</h2><p>No hay resguardos que coincidan con el filtro o la búsqueda.</p></div>`;
+  }
+  return `<div class="empty">
+    <svg class="big" viewBox="0 0 24 24" fill="none"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5"/><path d="M14 3v5h5" stroke="currentColor" stroke-width="1.5"/></svg>
+    <h2>Sin resguardos todavía</h2><p>Carga tus PDFs desde el dispositivo para empezar a firmar.</p>
+    <button class="btn btn-primary" id="emptyLoad">Cargar PDF</button></div>`;
+}
+function bindEmpty(){ const b = $("#emptyLoad"); if(b) b.onclick = loadViaPicker; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m])); }
+
+/* ============================================================
+   Acciones de tarjeta
+============================================================ */
+$("#list").addEventListener("click", async (e)=>{
+  const btn = e.target.closest("[data-act]");
+  if(!btn) return;
+  const it = items.find(x=>x.id===btn.dataset.id);
+  if(!it) return;
+  const act = btn.dataset.act;
+
+  if (act==="sign"){ openSheet(it); return; }
+  if (act==="queue"){ it.status="por_exportar"; await Store.put(it); await refresh(); toast("Marcado por exportar"); return; }
+  if (act==="unqueue"){ it.status="firmado"; await Store.put(it); await refresh(); toast("Quitado de la cola"); return; }
+  if (act==="export"){ await exportItem(it); return; }
+  if (act==="delete"){
+    it.status="eliminado"; await Store.put(it); await refresh(); toast("Movido a la papelera"); return;
+  }
+  if (act==="restore"){ it.status = Object.keys(it.signatures||{}).length ? "firmado" : "pendiente"; await Store.put(it); await refresh(); toast("Restaurado"); return; }
+  if (act==="purge"){
+    const ok = await confirmDialog("Borrar definitivo", `Se eliminará "${it.name}" de este dispositivo. No se puede deshacer.`, "Borrar");
+    if(ok){ await Store.del(it.id); items = items.filter(x=>x.id!==it.id); render(); toast("Eliminado del dispositivo"); }
+    return;
+  }
+});
+
+/* ============================================================
+   Exportar (incrustar firma con pdf-lib + guardar en dispositivo)
+============================================================ */
+async function buildSignedBytes(it){
+  const { PDFDocument } = PDFLib;
+  const src = it.pdf.slice(0); // clon para no detener el ArrayBuffer original
+  const doc = await PDFDocument.load(src);
+  const pages = doc.getPages();
+  for (const [idx, dataUrl] of Object.entries(it.signatures||{})){
+    const i = parseInt(idx,10);
+    if (i<0 || i>=pages.length) continue;
+    const png = await doc.embedPng(dataUrl);
+    const page = pages[i];
+    const { width, height } = page.getSize();
+    page.drawImage(png, { x:0, y:0, width, height });
+  }
+  return await doc.save();
+}
+
+async function exportItem(it){
+  if (!Object.keys(it.signatures||{}).length){ toast("Este resguardo aún no tiene firma"); return; }
+  toast("Generando PDF firmado…");
+  let bytes;
+  try{ bytes = await buildSignedBytes(it); }
+  catch(e){ console.error(e); toast("No se pudo generar el PDF"); return; }
+  const outName = it.name.replace(/\s+/g,"_") + "_firmado.pdf";
+  const blob = new Blob([bytes], { type:"application/pdf" });
+  let saved = false;
+
+  if (window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: outName,
+        types:[{ description:"PDF firmado", accept:{ "application/pdf":[".pdf"] } }],
+      });
+      const w = await handle.createWritable();
+      await w.write(blob); await w.close();
+      saved = true;
+    }catch(e){ if(e && e.name==="AbortError") return; }
+  }
+  if (!saved){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = outName; document.body.appendChild(a); a.click();
+    a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    saved = true;
+  }
+  if (saved){
+    it.exportedAt = Date.now();
+    it.status = "firmado";
+    await Store.put(it);
+    await refresh();
+    toast("Guardado: " + outName);
+  }
+}
+
+$("#btnExportAll").addEventListener("click", async ()=>{
+  const queue = items.filter(it=>it.status==="por_exportar");
+  for (const it of queue){ await exportItem(it); }
+});
+
+/* ============================================================
+   Hoja de firma (selección de página + lienzo de firma)
+============================================================ */
+const sheet = $("#sheet");
+const pageCanvas = $("#pageCanvas");
+const inkCanvas  = $("#inkCanvas");
+const pageWrap   = $("#pageWrap");
+const stage      = $("#stage");
+
+let sign = null; // { item, pdfDoc, pageCount, pageIndex, strokes:{[i]:[stroke]}, dirty }
+
+async function openSheet(it){
+  try{
+    const data = it.pdf.slice(0);
+    const pdfDoc = await pdfjsLib.getDocument({ data }).promise;
+    if (it.pages == null){ it.pages = pdfDoc.numPages; await Store.put(it); }
+    sign = { item: it, pdfDoc, pageCount: pdfDoc.numPages, pageIndex: 0, strokes:{}, dirty:false };
+    // cargar firmas existentes como imagen base (se redibujan al exportar; aquí solo se muestran)
+    sign.existing = {};
+    Object.assign(sign.existing, it.signatures||{});
+    $("#sheetName").textContent = it.name;
+    sheet.classList.add("show"); sheet.setAttribute("aria-hidden","false");
+    document.body.style.overflow = "hidden";
+    await buildThumbs();
+    await selectPage(0);
+  }catch(e){
+    console.error(e); toast("No se pudo abrir el PDF");
+  }
+}
+
+function closeSheet(){
+  sheet.classList.remove("show"); sheet.setAttribute("aria-hidden","true");
+  document.body.style.overflow = "";
+  sign = null;
+}
+$("#btnClose").addEventListener("click", async ()=>{
+  if (sign && sign.dirty){
+    const ok = await confirmDialog("Salir sin guardar", "Hay trazos sin guardar en esta hoja. ¿Salir de todas formas?", "Salir");
+    if(!ok) return;
+  }
+  closeSheet();
+});
+
+async function buildThumbs(){
+  const cont = $("#thumbs"); cont.innerHTML = "";
+  const n = sign.pageCount;
+  for (let i=0;i<n;i++){
+    const btn = document.createElement("button");
+    btn.className = "thumb"; btn.dataset.i = i; btn.setAttribute("aria-pressed", String(i===0));
+    if (sign.existing[i]) btn.classList.add("has-sig");
+    btn.innerHTML = `<span class="pg">${i+1}</span><span class="sig-dot"></span>`;
+    cont.appendChild(btn);
+    // render miniatura
+    const page = await sign.pdfDoc.getPage(i+1);
+    const vp = page.getViewport({ scale: 1 });
+    const targetH = 92;
+    const scale = targetH / vp.height;
+    const v = page.getViewport({ scale });
+    const c = document.createElement("canvas");
+    c.width = Math.floor(v.width); c.height = Math.floor(v.height);
+    await page.render({ canvasContext: c.getContext("2d"), viewport: v }).promise;
+    btn.insertBefore(c, btn.firstChild);
+  }
+  cont.addEventListener("click", (e)=>{
+    const t = e.target.closest(".thumb"); if(!t) return;
+    selectPage(parseInt(t.dataset.i,10));
+  });
+}
+
+let renderTask = null;
+async function selectPage(i){
+  if (!sign) return;
+  // guardar trazos de la hoja anterior en memoria de sesión ya está hecho (strokes[i])
+  sign.pageIndex = i;
+  document.querySelectorAll(".thumb").forEach(t=> t.setAttribute("aria-pressed", String(parseInt(t.dataset.i,10)===i)));
+  $("#sheetSub").textContent = `Hoja ${i+1} de ${sign.pageCount}`;
+
+  const page = await sign.pdfDoc.getPage(i+1);
+  const base = page.getViewport({ scale: 1 });
+
+  // ajustar (contain) al área disponible del escenario
+  const pad = 24;
+  const availW = stage.clientWidth  - pad*2;
+  const availH = stage.clientHeight - pad*2;
+  let scale = Math.min(availW / base.width, availH / base.height);
+  scale = Math.max(0.2, Math.min(scale, 4));
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  const vp = page.getViewport({ scale });
+
+  const cssW = Math.floor(vp.width), cssH = Math.floor(vp.height);
+  pageWrap.style.width = cssW+"px"; pageWrap.style.height = cssH+"px";
+
+  // lienzo del PDF (alta resolución)
+  pageCanvas.width = Math.floor(cssW*dpr); pageCanvas.height = Math.floor(cssH*dpr);
+  pageCanvas.style.width = cssW+"px"; pageCanvas.style.height = cssH+"px";
+  const pctx = pageCanvas.getContext("2d");
+  pctx.setTransform(dpr,0,0,dpr,0,0);
+  if (renderTask) { try{ renderTask.cancel(); }catch(_){} }
+  renderTask = page.render({ canvasContext: pctx, viewport: vp });
+  await renderTask.promise.catch(()=>{});
+
+  // lienzo de tinta
+  inkCanvas.width = Math.floor(cssW*dpr); inkCanvas.height = Math.floor(cssH*dpr);
+  inkCanvas.style.width = cssW+"px"; inkCanvas.style.height = cssH+"px";
+  ink.dpr = dpr; ink.cssW = cssW; ink.cssH = cssH;
+  if (!sign.strokes[i]) sign.strokes[i] = [];
+  redrawInk();
+  // pista visible solo en hoja sin firma
+  const hint = $("#signHint");
+  hint.style.opacity = (sign.strokes[i].length || sign.existing[i]) ? "0" : "1";
+}
+
+/* ---------- Dibujo con eventos de puntero (dedo / pluma con presión) ---------- */
+const ink = { dpr:1, cssW:0, cssH:0, drawing:false, cur:null };
+const ictx = inkCanvas.getContext("2d");
+
+function ptFromEvent(e){
+  const r = inkCanvas.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width;   // normalizado 0..1
+  const y = (e.clientY - r.top)  / r.height;
+  let p = (e.pointerType === "pen" && e.pressure>0) ? e.pressure : 0.5;
+  return { x, y, p };
+}
+function baseWidth(){ return parseFloat($("#penWidth").value) || 2.4; }
+
+function drawSegment(a, b){
+  const bw = baseWidth();
+  const w = bw * (0.45 + ((a.p+b.p)/2) * 1.25);
+  ictx.lineCap = "round"; ictx.lineJoin = "round";
+  ictx.strokeStyle = "#111111"; ictx.lineWidth = w;
+  ictx.beginPath();
+  ictx.moveTo(a.x*ink.cssW, a.y*ink.cssH);
+  ictx.lineTo(b.x*ink.cssW, b.y*ink.cssH);
+  ictx.stroke();
+}
+function redrawInk(){
+  ictx.setTransform(ink.dpr,0,0,ink.dpr,0,0);
+  ictx.clearRect(0,0,ink.cssW,ink.cssH);
+  const strokes = (sign && sign.strokes[sign.pageIndex]) || [];
+  for (const st of strokes){
+    for (let k=1;k<st.length;k++) drawSegment(st[k-1], st[k]);
+    if (st.length===1){ // punto suelto
+      const a=st[0]; ictx.fillStyle="#111"; ictx.beginPath();
+      ictx.arc(a.x*ink.cssW, a.y*ink.cssH, baseWidth()*0.6, 0, Math.PI*2); ictx.fill();
+    }
+  }
+}
+
+inkCanvas.addEventListener("pointerdown", (e)=>{
+  if(!sign) return;
+  inkCanvas.setPointerCapture(e.pointerId);
+  ink.drawing = true; sign.dirty = true;
+  ink.cur = [ ptFromEvent(e) ];
+  sign.strokes[sign.pageIndex].push(ink.cur);
+  $("#signHint").style.opacity = "0";
+  e.preventDefault();
+});
+inkCanvas.addEventListener("pointermove", (e)=>{
+  if(!ink.drawing || !ink.cur) return;
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+  for (const ev of evs){
+    const p = ptFromEvent(ev);
+    const last = ink.cur[ink.cur.length-1];
+    drawSegment(last, p);
+    ink.cur.push(p);
+  }
+  e.preventDefault();
+}, { passive:false });
+function endStroke(e){ if(ink.drawing){ ink.drawing=false; ink.cur=null; } }
+inkCanvas.addEventListener("pointerup", endStroke);
+inkCanvas.addEventListener("pointercancel", endStroke);
+inkCanvas.addEventListener("pointerleave", endStroke);
+
+$("#btnUndo").addEventListener("click", ()=>{
+  if(!sign) return;
+  const s = sign.strokes[sign.pageIndex];
+  if (s && s.length){ s.pop(); redrawInk(); sign.dirty = true; }
+});
+$("#btnClear").addEventListener("click", ()=>{
+  if(!sign) return;
+  sign.strokes[sign.pageIndex] = [];
+  delete sign.existing[sign.pageIndex];
+  redrawInk(); sign.dirty = true;
+});
+$("#penWidth").addEventListener("input", redrawInk);
+window.addEventListener("resize", ()=>{ if(sign) selectPage(sign.pageIndex); });
+
+/* ---------- Guardar firma (vuelca el lienzo a PNG en el resguardo) ---------- */
+$("#btnSaveSig").addEventListener("click", async ()=>{
+  if(!sign) return;
+  const it = sign.item;
+  let touched = 0;
+  // genera PNG por cada hoja con trazos nuevos
+  for (const [iStr, strokes] of Object.entries(sign.strokes)){
+    const i = parseInt(iStr,10);
+    if (!strokes || strokes.length===0){
+      if (it.signatures[i] && !sign.existing[i]) { /* limpiada */ }
+      continue;
+    }
+    const png = strokesToPng(i);
+    if (png){ it.signatures[i] = png; touched++; }
+  }
+  // hojas existentes que fueron limpiadas
+  for (const iStr of Object.keys(it.signatures)){
+    const i = parseInt(iStr,10);
+    const cleared = (!sign.strokes[i] || sign.strokes[i].length===0) && !sign.existing[i];
+    if (cleared) delete it.signatures[i];
+  }
+  const totalSigned = Object.keys(it.signatures).length;
+  if (totalSigned === 0){
+    it.status = "pendiente"; it.signedAt = null;
+  } else {
+    if (it.status==="pendiente" || it.status==="eliminado") it.status = "firmado";
+    it.signedAt = Date.now();
+  }
+  await Store.put(it);
+  sign.dirty = false;
+  await refresh();
+  closeSheet();
+  toast(totalSigned ? "Firma guardada" : "Firma eliminada");
+});
+
+// Re-renderiza una hoja a tamaño "natural" del PDF para una firma nítida al exportar
+function strokesToPng(i){
+  const strokes = sign.strokes[i];
+  if (!strokes || strokes.length===0) return null;
+  // tamaño base de la página
+  // usamos un canvas a 2x del ancho de página (puntos) para nitidez
+  const out = document.createElement("canvas");
+  // obtenemos proporción desde el viewport base ya conocido (cssW/cssH actuales solo si i===pageIndex)
+  // para robustez, recalculamos proporción con la página
+  // (síncrono: usamos la relación cssW/cssH si es la hoja activa; si no, proporción 1:√2)
+  let ratio = ink.cssW && ink.cssH ? (ink.cssW/ink.cssH) : (1/1.4142);
+  // mejor: usar proporción real de la hoja activa o recordada
+  const remembered = sign._ratios && sign._ratios[i];
+  if (remembered) ratio = remembered;
+  const W = 1200, H = Math.round(W / ratio);
+  out.width = W; out.height = H;
+  const c = out.getContext("2d");
+  c.lineCap="round"; c.lineJoin="round"; c.strokeStyle="#111111";
+  const bw = baseWidth() * (W / (ink.cssW||W)) * 0.9;
+  for (const st of strokes){
+    for (let k=1;k<st.length;k++){
+      const a=st[k-1], b=st[k];
+      c.lineWidth = bw * (0.45 + ((a.p+b.p)/2)*1.25);
+      c.beginPath(); c.moveTo(a.x*W,a.y*H); c.lineTo(b.x*W,b.y*H); c.stroke();
+    }
+    if (st.length===1){ const a=st[0]; c.fillStyle="#111"; c.beginPath(); c.arc(a.x*W,a.y*H,bw*0.6,0,Math.PI*2); c.fill(); }
+  }
+  return out.toDataURL("image/png");
+}
+
+// recordar proporción real de cada página al seleccionarla
+const _selectPage = selectPage;
+selectPage = async function(i){
+  await _selectPage(i);
+  if (sign){
+    sign._ratios = sign._ratios || {};
+    sign._ratios[i] = ink.cssW / ink.cssH;
+  }
+};
+
+/* ============================================================
+   Filtros, búsqueda, papelera
+============================================================ */
+$("#dash").addEventListener("click", (e)=>{
+  const b = e.target.closest(".stat"); if(!b) return;
+  showTrash = false; filter = b.dataset.filter; render();
+});
+$("#search").addEventListener("input", (e)=>{ query = e.target.value.trim(); render(); });
+$("#btnTrash").addEventListener("click", ()=>{ showTrash = !showTrash; if(showTrash) filter="todos"; render(); });
+$("#btnLoad").addEventListener("click", loadViaPicker);
+$("#btnFolder").addEventListener("click", loadViaFolder);
+
+/* ============================================================
+   Arranque
+============================================================ */
+async function refresh(){ items = await Store.getAll(); render(); }
+
+(async function init(){
+  await refresh();
+})();
+
+/* ============================================================
+   Service worker (solo cuando está desplegado en HTTPS)
+============================================================ */
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{ /* en vista previa puede no registrarse; es normal */ });
+  });
+}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "Firma de resguardos",
+  "short_name": "Resguardos",
+  "description": "Firma resguardos en PDF con el dedo o pluma táctil, directo en tablet o móvil. Funciona sin conexión.",
+  "lang": "es-MX",
+  "dir": "ltr",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FAFAF9",
+  "theme_color": "#1C1C1E",
+  "categories": ["productivity", "business", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
