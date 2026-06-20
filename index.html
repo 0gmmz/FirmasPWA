@@ -101,6 +101,18 @@
   .queuebar.show{ display:flex; }
   .queuebar span{ font-size:13.5px; font-weight:550; }
 
+  .folderbar{
+    display:none; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:8px 8px 8px 12px; margin:14px 0 0;
+  }
+  .folderbar.show{ display:flex; }
+  .fb-info{ display:flex; align-items:center; gap:9px; min-width:0; color:var(--muted); }
+  .fb-text{ display:flex; flex-direction:column; min-width:0; }
+  .fb-text b{ font-size:13.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:46vw; }
+  .fb-text span{ font-family:var(--mono); font-size:10.5px; color:var(--faint); letter-spacing:.02em; }
+  .fb-actions{ display:flex; gap:6px; flex:0 0 auto; }
+
   /* ---------- Cards ---------- */
   .list{ display:flex; flex-direction:column; gap:9px; }
   .card{
@@ -175,23 +187,64 @@
   .stage{
     flex:1; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center;
     background:repeating-conic-gradient(#f1f0ee 0% 25%, #fafaf9 0% 50%) 50% / 22px 22px;
+    touch-action:none; user-select:none; -webkit-user-select:none;
   }
-  .page-wrap{ position:relative; box-shadow:0 6px 30px -10px rgba(0,0,0,.3); background:#fff; }
+  .page-wrap{ position:absolute; left:0; top:0; box-shadow:0 6px 30px -10px rgba(0,0,0,.3); background:#fff; transform-origin:0 0; will-change:transform; }
   #pageCanvas{ display:block; }
-  #inkCanvas{ position:absolute; inset:0; touch-action:none; cursor:crosshair; }
+  .stamps{ position:absolute; inset:0; }
+  .stamp{
+    position:absolute; box-sizing:border-box; border:1.5px dashed transparent; border-radius:4px;
+    touch-action:none; cursor:grab;
+  }
+  .stamp img{ width:100%; height:100%; display:block; pointer-events:none; }
+  .stamp.sel{ border-color:var(--blue); background:rgba(37,99,235,.06); }
+  .stamp .handle{
+    position:absolute; right:-11px; bottom:-11px; width:22px; height:22px; border-radius:50%;
+    background:var(--blue); border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.3);
+    display:none; cursor:nwse-resize; touch-action:none;
+  }
+  .stamp .del{
+    position:absolute; left:-11px; top:-11px; width:22px; height:22px; border-radius:50%;
+    background:var(--red); border:2px solid #fff; color:#fff; display:none;
+    align-items:center; justify-content:center; font-size:14px; line-height:1; cursor:pointer;
+  }
+  .stamp.sel .handle, .stamp.sel .del{ display:flex; }
+
   .stage .hint{
     position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
     background:rgba(28,28,30,.82); color:#fff; font-size:12.5px; padding:7px 13px; border-radius:999px;
-    pointer-events:none; transition:opacity .3s ease;
+    pointer-events:none; transition:opacity .3s ease; text-align:center; max-width:88%;
   }
+  .zoomctl{
+    position:absolute; top:12px; right:12px; display:flex; gap:1px; background:var(--surface);
+    border:1px solid var(--border-strong); border-radius:10px; overflow:hidden; box-shadow:var(--shadow);
+  }
+  .zoomctl button{ padding:8px 12px; font-size:15px; font-weight:600; color:var(--ink); min-width:40px; }
+  .zoomctl button:nth-child(2){ border-left:1px solid var(--border); border-right:1px solid var(--border); font-size:12.5px; font-weight:550; }
+  .zoomctl button:active{ background:var(--surface-2); }
 
   .sign-tools{
     display:flex; align-items:center; gap:10px; padding:11px 14px; border-top:1px solid var(--border);
     background:var(--surface); flex-wrap:wrap;
   }
+  .toolnote{ font-size:12.5px; color:var(--muted); }
   .pentip{ display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--muted); }
   .pentip input[type=range]{ width:108px; accent-color:var(--ink); }
   .grow{ flex:1; }
+
+  /* ---------- Recuadro para firmar (pad) ---------- */
+  .pad-bg{ position:fixed; inset:0; background:rgba(28,28,30,.5); z-index:70; display:none; align-items:flex-end; justify-content:center; }
+  .pad-bg.show{ display:flex; }
+  .pad{ background:var(--surface); width:100%; max-width:680px; border-radius:18px 18px 0 0; padding:14px 16px calc(16px + env(safe-area-inset-bottom));
+    box-shadow:0 -8px 40px -12px rgba(0,0,0,.4); }
+  @media (min-width:560px){ .pad-bg{ align-items:center; } .pad{ border-radius:18px; margin:20px; } }
+  .pad-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; font-size:13.5px; font-weight:600; }
+  .pad-canvas-wrap{ position:relative; border:1.5px solid var(--border-strong); border-radius:12px; background:
+    linear-gradient(#fff,#fff) padding-box; overflow:hidden; height:200px; }
+  #padCanvas{ display:block; width:100%; height:100%; touch-action:none; cursor:crosshair; position:relative; z-index:2; }
+  .pad-baseline{ position:absolute; left:18px; right:18px; bottom:48px; border-bottom:1.5px dashed var(--border-strong); z-index:1; }
+  .pad-ph{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:var(--faint); font-size:15px; z-index:1; pointer-events:none; }
+  .pad-actions{ display:flex; align-items:center; gap:8px; margin-top:12px; }
 
   /* ---------- Toast & dialog ---------- */
   #toast{
@@ -266,6 +319,17 @@
     </button>
   </section>
 
+  <div class="folderbar" id="folderbar">
+    <div class="fb-info">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      <div class="fb-text"><b id="fbName">—</b><span id="fbSynced">—</span></div>
+    </div>
+    <div class="fb-actions">
+      <button class="btn btn-ghost btn-sm" id="btnSync">Sincronizar</button>
+      <button class="btn btn-ghost btn-sm" id="btnUnlink" title="Quitar carpeta">Quitar</button>
+    </div>
+  </div>
+
   <div class="queuebar" id="queuebar">
     <span id="queuetext">0 en cola para exportar</span>
     <button class="btn btn-sm" style="background:#fff;color:var(--blue);border:1px solid #BFDBFE" id="btnExportAll">Exportar todos</button>
@@ -301,24 +365,51 @@
   <div class="stage" id="stage">
     <div class="page-wrap" id="pageWrap">
       <canvas id="pageCanvas"></canvas>
-      <canvas id="inkCanvas"></canvas>
+      <div class="stamps" id="stamps"></div>
     </div>
-    <div class="hint" id="signHint">Firma con el dedo o la pluma sobre la hoja</div>
+    <div class="hint" id="signHint">Pellizca para acercar · arrastra para mover la hoja</div>
+    <div class="zoomctl" id="zoomctl">
+      <button id="zOut" aria-label="Alejar">−</button>
+      <button id="zFit" aria-label="Ajustar">Ajustar</button>
+      <button id="zIn" aria-label="Acercar">+</button>
+    </div>
   </div>
   <div class="sign-tools">
-    <div class="pentip">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 21l3-1 11-11-2-2L4 18l-1 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m14 5 3-3 4 4-3 3" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-      Trazo
-      <input id="penWidth" type="range" min="1" max="6" step="0.5" value="2.4" />
-    </div>
-    <div class="grow"></div>
-    <button class="btn btn-ghost btn-sm" id="btnUndo">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 7H5V3M5 7a8 8 0 1 1-2 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Deshacer
+    <button class="btn btn-primary" id="btnOpenPad">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 21l3-1 11-11-2-2L4 18l-1 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m14 5 3-3 4 4-3 3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      Firmar
     </button>
-    <button class="btn btn-ghost btn-sm" id="btnClear">Limpiar hoja</button>
+    <button class="btn btn-ghost" id="btnReuse" hidden>Reutilizar firma</button>
+    <div class="grow"></div>
+    <span class="toolnote" id="toolnote">Coloca tu firma sobre el nombre</span>
   </div>
 </div>
+
+<!-- Signature pad (recuadro para firmar) -->
+<div class="pad-bg" id="padBg" aria-hidden="true">
+  <div class="pad" role="dialog" aria-modal="true" aria-label="Recuadro para firmar">
+    <div class="pad-head">
+      <span>Firma dentro del recuadro</span>
+      <div class="pentip">
+        <span>Trazo</span>
+        <input id="penWidth" type="range" min="1" max="6" step="0.5" value="2.6" />
+      </div>
+    </div>
+    <div class="pad-canvas-wrap">
+      <canvas id="padCanvas"></canvas>
+      <span class="pad-baseline"></span>
+      <span class="pad-ph" id="padPh">Firma aquí</span>
+    </div>
+    <div class="pad-actions">
+      <button class="btn btn-ghost btn-sm" id="padClear">Limpiar</button>
+      <button class="btn btn-ghost btn-sm" id="padUndo">Deshacer</button>
+      <div class="grow"></div>
+      <button class="btn btn-ghost btn-sm" id="padCancel">Cancelar</button>
+      <button class="btn btn-primary btn-sm" id="padUse">Usar firma</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- Confirm modal -->
 <div class="modal-bg" id="modalBg">
@@ -356,7 +447,7 @@ if (window.pdfjsLib) {
    bloquea el almacenamiento; al desplegarse persiste de verdad)
 ============================================================ */
 const Store = (function(){
-  const DB_NAME = "resguardos-db", STORE = "items", VERSION = 1;
+  const DB_NAME = "resguardos-db", STORE = "items", META = "meta", VERSION = 2;
   let dbPromise = null, mem = null;
 
   function useMemory(){
@@ -370,36 +461,54 @@ const Store = (function(){
       let req;
       try { req = indexedDB.open(DB_NAME, VERSION); }
       catch(e){ useMemory(); return rej(e); }
-      req.onupgradeneeded = ()=>{ req.result.createObjectStore(STORE, { keyPath:"id" }); };
+      req.onupgradeneeded = ()=>{
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath:"id" });
+        if (!db.objectStoreNames.contains(META))  db.createObjectStore(META,  { keyPath:"key" });
+      };
       req.onsuccess = ()=> res(req.result);
       req.onerror = ()=>{ useMemory(); rej(req.error); };
     });
     return dbPromise;
   }
-  function tx(mode){
-    return openDB().then(db=> db.transaction(STORE, mode).objectStore(STORE));
+  function txStore(name, mode){
+    return openDB().then(db=> db.transaction(name, mode).objectStore(name));
   }
   return {
     async getAll(){
-      if (mem) return [...mem.values()];
+      if (mem) return [...mem.entries()].filter(([k])=>!String(k).startsWith("meta:")).map(([,v])=>v);
       try{
-        const os = await tx("readonly");
+        const os = await txStore(STORE,"readonly");
         return await new Promise((res,rej)=>{ const r=os.getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error); });
-      }catch(e){ useMemory(); return [...mem.values()]; }
+      }catch(e){ useMemory(); return [...mem.entries()].filter(([k])=>!String(k).startsWith("meta:")).map(([,v])=>v); }
     },
     async put(item){
       if (mem){ mem.set(item.id, item); return item; }
       try{
-        const os = await tx("readwrite");
+        const os = await txStore(STORE,"readwrite");
         return await new Promise((res,rej)=>{ const r=os.put(item); r.onsuccess=()=>res(item); r.onerror=()=>rej(r.error); });
       }catch(e){ useMemory(); mem.set(item.id, item); return item; }
     },
     async del(id){
       if (mem){ mem.delete(id); return; }
       try{
-        const os = await tx("readwrite");
+        const os = await txStore(STORE,"readwrite");
         return await new Promise((res,rej)=>{ const r=os.delete(id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); });
       }catch(e){ useMemory(); mem.delete(id); }
+    },
+    async getMeta(key){
+      if (mem) return mem.has("meta:"+key) ? mem.get("meta:"+key) : null;
+      try{
+        const os = await txStore(META,"readonly");
+        return await new Promise((res,rej)=>{ const r=os.get(key); r.onsuccess=()=>res(r.result?r.result.value:null); r.onerror=()=>rej(r.error); });
+      }catch(e){ useMemory(); return mem.has("meta:"+key) ? mem.get("meta:"+key) : null; }
+    },
+    async setMeta(key, value){
+      if (mem){ mem.set("meta:"+key, value); return; }
+      try{
+        const os = await txStore(META,"readwrite");
+        return await new Promise((res,rej)=>{ const r=os.put({ key, value }); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); });
+      }catch(e){ useMemory(); mem.set("meta:"+key, value); }
     }
   };
 })();
@@ -492,23 +601,91 @@ async function loadViaPicker(){
   $("#fileInput").click();
 }
 
-async function loadViaFolder(){
-  if (window.showDirectoryPicker){
-    try{
-      const dir = await window.showDirectoryPicker();
-      let added = 0;
-      for await (const entry of dir.values()){
-        if (entry.kind==="file" && /\.pdf$/i.test(entry.name)){
-          const f = await entry.getFile(); await addPdfFile(f); added++;
-        }
-      }
-      await refresh();
-      toast(added ? added+" PDFs importados de la carpeta" : "No se encontraron PDFs en la carpeta");
-    }catch(e){ if(e && e.name!=="AbortError") toast("No se pudo abrir la carpeta"); }
-  }else{
-    toast("Tu navegador no permite elegir carpeta — usa Cargar PDF");
-    $("#fileInput").click();
+/* ---------- Carpeta enlazada (toma PDFs de una app/carpeta externa) ----------
+   Modelo "jalar": eliges una vez la carpeta donde la app externa deja los PDFs;
+   la app recuerda el permiso y la vuelve a leer al abrir y al pulsar Sincronizar,
+   importando solo los archivos nuevos. Requiere Chrome (Android/escritorio). */
+
+async function scanFolderHandle(dir){
+  const out = [];
+  for await (const entry of dir.values()){
+    if (entry.kind==="file" && /\.pdf$/i.test(entry.name)) out.push(entry);
   }
+  return out;
+}
+function knownKeys(){
+  return new Set(items.map(it => (it.fileName||"") + "|" + (it.size||0)));
+}
+async function importNewFromFolder(dir){
+  const entries = await scanFolderHandle(dir);
+  const known = knownKeys();
+  let added = 0;
+  for (const entry of entries){
+    const f = await entry.getFile();
+    const key = f.name + "|" + f.size;
+    if (known.has(key)) continue;
+    await addPdfFile(f); known.add(key); added++;
+  }
+  if (added) await refresh();
+  return added;
+}
+
+async function linkOrSyncFolder(){
+  if (!window.showDirectoryPicker){
+    toast("Tu navegador no permite enlazar carpeta — usa Cargar PDF");
+    $("#fileInput").click();
+    return;
+  }
+  let dir = await Store.getMeta("folder");
+  try{
+    if (dir){
+      const perm = await dir.requestPermission({ mode:"read" });
+      if (perm !== "granted") dir = null;     // perdió permiso → re-elegir
+    }
+    if (!dir){
+      dir = await window.showDirectoryPicker({ id:"resguardos-src", mode:"read" });
+      await Store.setMeta("folder", dir);
+    }
+    const n = await importNewFromFolder(dir);
+    await Store.setMeta("folderSyncedAt", Date.now());
+    await renderFolderBar();
+    toast(n ? (n===1 ? "1 PDF nuevo de la carpeta" : n+" PDFs nuevos de la carpeta") : "Carpeta al día, sin nuevos");
+  }catch(e){ if(e && e.name!=="AbortError") toast("No se pudo leer la carpeta"); }
+}
+
+async function unlinkFolder(){
+  await Store.setMeta("folder", null);
+  await Store.setMeta("folderSyncedAt", null);
+  await renderFolderBar();
+  toast("Carpeta desvinculada");
+}
+
+async function autoSyncOnLaunch(){
+  if (!window.showDirectoryPicker) return;
+  const dir = await Store.getMeta("folder");
+  if (!dir) return;
+  try{
+    const perm = await dir.queryPermission({ mode:"read" });
+    if (perm !== "granted"){ await renderFolderBar(); return; }  // pedirá permiso al pulsar Sincronizar
+    const n = await importNewFromFolder(dir);
+    await Store.setMeta("folderSyncedAt", Date.now());
+    await renderFolderBar();
+    if (n) toast(n===1 ? "1 PDF nuevo de la carpeta" : n+" PDFs nuevos de la carpeta");
+  }catch(e){ /* sin ruido en el arranque */ }
+}
+
+async function renderFolderBar(){
+  const bar = $("#folderbar");
+  const dir = await Store.getMeta("folder");
+  if (!dir){ bar.classList.remove("show"); return; }
+  bar.classList.add("show");
+  $("#fbName").textContent = dir.name || "Carpeta enlazada";
+  const ts = await Store.getMeta("folderSyncedAt");
+  let perm = "prompt";
+  try{ perm = await dir.queryPermission({ mode:"read" }); }catch(e){}
+  $("#fbSynced").textContent = (perm!=="granted")
+    ? "Toca Sincronizar para dar permiso"
+    : (ts ? "Sincronizada " + fmtDate(ts) : "Lista para sincronizar");
 }
 
 $("#fileInput").addEventListener("change", async (e)=>{
@@ -668,18 +845,32 @@ $("#list").addEventListener("click", async (e)=>{
 /* ============================================================
    Exportar (incrustar firma con pdf-lib + guardar en dispositivo)
 ============================================================ */
+// normaliza el modelo de firmas: admite el formato viejo (dataURL de página completa)
+// y el nuevo (lista de sellos {png,nx,ny,nw,nh})
+function stampsOf(it, i){
+  const v = (it.signatures||{})[i];
+  if (!v) return [];
+  if (typeof v === "string") return [{ png:v, nx:0, ny:0, nw:1, nh:1 }];
+  return Array.isArray(v) ? v : [];
+}
+
 async function buildSignedBytes(it){
   const { PDFDocument } = PDFLib;
   const src = it.pdf.slice(0); // clon para no detener el ArrayBuffer original
   const doc = await PDFDocument.load(src);
   const pages = doc.getPages();
-  for (const [idx, dataUrl] of Object.entries(it.signatures||{})){
+  for (const idx of Object.keys(it.signatures||{})){
     const i = parseInt(idx,10);
     if (i<0 || i>=pages.length) continue;
-    const png = await doc.embedPng(dataUrl);
     const page = pages[i];
-    const { width, height } = page.getSize();
-    page.drawImage(png, { x:0, y:0, width, height });
+    const { width:W, height:H } = page.getSize();
+    for (const s of stampsOf(it, i)){
+      const png = await doc.embedPng(s.png);
+      const w = s.nw * W, h = s.nh * H;
+      const x = s.nx * W;
+      const y = H - (s.ny * H) - h;   // PDF: origen abajo-izquierda
+      page.drawImage(png, { x, y, width:w, height:h });
+    }
   }
   return await doc.save();
 }
@@ -727,43 +918,59 @@ $("#btnExportAll").addEventListener("click", async ()=>{
 });
 
 /* ============================================================
-   Hoja de firma (selección de página + lienzo de firma)
+   Hoja de firma — flujo de sello:
+   1) la hoja se acerca/mueve con gestos SIN rayarla
+   2) "Firmar" abre un recuadro aparte para dibujar la firma
+   3) la firma queda como un sello que se arrastra y ajusta sobre el nombre
 ============================================================ */
-const sheet = $("#sheet");
-const pageCanvas = $("#pageCanvas");
-const inkCanvas  = $("#inkCanvas");
-const pageWrap   = $("#pageWrap");
-const stage      = $("#stage");
+const sheet     = $("#sheet");
+const pageCanvas= $("#pageCanvas");
+const pageWrap  = $("#pageWrap");
+const stage     = $("#stage");
+const stampsEl  = $("#stamps");
 
-let sign = null; // { item, pdfDoc, pageCount, pageIndex, strokes:{[i]:[stroke]}, dirty }
+const clamp = (v,a,b)=> Math.max(a, Math.min(b, v));
+function baseWidth(){ return parseFloat($("#penWidth").value) || 2.6; }
+function imgAspect(src){
+  return new Promise(res=>{ const im=new Image(); im.onload=()=>res((im.naturalWidth/im.naturalHeight)||2.2); im.onerror=()=>res(2.2); im.src=src; });
+}
+
+let sign = null;
+// { item, pdfDoc, pageCount, pageIndex, stamps:{[i]:[{id,png,aspect,nx,ny,nw,nh}]},
+//   baseW, baseH, view:{scale,tx,ty}, selId, lastSig, dirty }
 
 async function openSheet(it){
   try{
     const data = it.pdf.slice(0);
     const pdfDoc = await pdfjsLib.getDocument({ data }).promise;
     if (it.pages == null){ it.pages = pdfDoc.numPages; await Store.put(it); }
-    sign = { item: it, pdfDoc, pageCount: pdfDoc.numPages, pageIndex: 0, strokes:{}, dirty:false };
-    // cargar firmas existentes como imagen base (se redibujan al exportar; aquí solo se muestran)
-    sign.existing = {};
-    Object.assign(sign.existing, it.signatures||{});
+    sign = { item: it, pdfDoc, pageCount: pdfDoc.numPages, pageIndex: 0,
+             stamps:{}, baseW:0, baseH:0, view:{scale:1,tx:0,ty:0}, selId:null, lastSig:null, dirty:false };
+    // cargar firmas existentes como sellos editables
+    for (const k of Object.keys(it.signatures||{})){
+      const i = parseInt(k,10), list=[];
+      for (const s of stampsOf(it, i)){
+        list.push({ id:uid(), png:s.png, aspect: await imgAspect(s.png), nx:s.nx, ny:s.ny, nw:s.nw, nh:s.nh });
+        if (!sign.lastSig) sign.lastSig = { png:s.png, aspect: await imgAspect(s.png) };
+      }
+      sign.stamps[i] = list;
+    }
     $("#sheetName").textContent = it.name;
+    $("#btnReuse").hidden = !sign.lastSig;
     sheet.classList.add("show"); sheet.setAttribute("aria-hidden","false");
     document.body.style.overflow = "hidden";
     await buildThumbs();
     await selectPage(0);
-  }catch(e){
-    console.error(e); toast("No se pudo abrir el PDF");
-  }
+  }catch(e){ console.error(e); toast("No se pudo abrir el PDF"); }
 }
 
 function closeSheet(){
   sheet.classList.remove("show"); sheet.setAttribute("aria-hidden","true");
-  document.body.style.overflow = "";
-  sign = null;
+  document.body.style.overflow = ""; sign = null;
 }
 $("#btnClose").addEventListener("click", async ()=>{
   if (sign && sign.dirty){
-    const ok = await confirmDialog("Salir sin guardar", "Hay trazos sin guardar en esta hoja. ¿Salir de todas formas?", "Salir");
+    const ok = await confirmDialog("Salir sin guardar", "Hay cambios sin guardar en este resguardo. ¿Salir de todas formas?", "Salir");
     if(!ok) return;
   }
   closeSheet();
@@ -771,222 +978,302 @@ $("#btnClose").addEventListener("click", async ()=>{
 
 async function buildThumbs(){
   const cont = $("#thumbs"); cont.innerHTML = "";
-  const n = sign.pageCount;
-  for (let i=0;i<n;i++){
+  for (let i=0;i<sign.pageCount;i++){
     const btn = document.createElement("button");
     btn.className = "thumb"; btn.dataset.i = i; btn.setAttribute("aria-pressed", String(i===0));
-    if (sign.existing[i]) btn.classList.add("has-sig");
+    if ((sign.stamps[i]||[]).length) btn.classList.add("has-sig");
     btn.innerHTML = `<span class="pg">${i+1}</span><span class="sig-dot"></span>`;
     cont.appendChild(btn);
-    // render miniatura
     const page = await sign.pdfDoc.getPage(i+1);
     const vp = page.getViewport({ scale: 1 });
-    const targetH = 92;
-    const scale = targetH / vp.height;
+    const scale = 92 / vp.height;
     const v = page.getViewport({ scale });
     const c = document.createElement("canvas");
     c.width = Math.floor(v.width); c.height = Math.floor(v.height);
     await page.render({ canvasContext: c.getContext("2d"), viewport: v }).promise;
     btn.insertBefore(c, btn.firstChild);
   }
-  cont.addEventListener("click", (e)=>{
-    const t = e.target.closest(".thumb"); if(!t) return;
-    selectPage(parseInt(t.dataset.i,10));
-  });
+  if (!cont._bound){
+    cont._bound = true;
+    cont.addEventListener("click", (e)=>{
+      const t = e.target.closest(".thumb"); if(!t) return;
+      selectPage(parseInt(t.dataset.i,10));
+    });
+  }
 }
 
 let renderTask = null;
 async function selectPage(i){
   if (!sign) return;
-  // guardar trazos de la hoja anterior en memoria de sesión ya está hecho (strokes[i])
-  sign.pageIndex = i;
+  sign.pageIndex = i; sign.selId = null;
   document.querySelectorAll(".thumb").forEach(t=> t.setAttribute("aria-pressed", String(parseInt(t.dataset.i,10)===i)));
   $("#sheetSub").textContent = `Hoja ${i+1} de ${sign.pageCount}`;
 
   const page = await sign.pdfDoc.getPage(i+1);
   const base = page.getViewport({ scale: 1 });
-
-  // ajustar (contain) al área disponible del escenario
-  const pad = 24;
+  const pad = 20;
   const availW = stage.clientWidth  - pad*2;
   const availH = stage.clientHeight - pad*2;
-  let scale = Math.min(availW / base.width, availH / base.height);
-  scale = Math.max(0.2, Math.min(scale, 4));
+  let fit = Math.min(availW / base.width, availH / base.height);
+  fit = Math.max(0.2, Math.min(fit, 3));
   const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-  const vp = page.getViewport({ scale });
-
+  const vp = page.getViewport({ scale: fit });
   const cssW = Math.floor(vp.width), cssH = Math.floor(vp.height);
-  pageWrap.style.width = cssW+"px"; pageWrap.style.height = cssH+"px";
 
-  // lienzo del PDF (alta resolución)
+  sign.baseW = cssW; sign.baseH = cssH;
+  pageWrap.style.width = cssW+"px"; pageWrap.style.height = cssH+"px";
   pageCanvas.width = Math.floor(cssW*dpr); pageCanvas.height = Math.floor(cssH*dpr);
   pageCanvas.style.width = cssW+"px"; pageCanvas.style.height = cssH+"px";
   const pctx = pageCanvas.getContext("2d");
   pctx.setTransform(dpr,0,0,dpr,0,0);
-  if (renderTask) { try{ renderTask.cancel(); }catch(_){} }
+  if (renderTask){ try{ renderTask.cancel(); }catch(_){} }
   renderTask = page.render({ canvasContext: pctx, viewport: vp });
   await renderTask.promise.catch(()=>{});
 
-  // lienzo de tinta
-  inkCanvas.width = Math.floor(cssW*dpr); inkCanvas.height = Math.floor(cssH*dpr);
-  inkCanvas.style.width = cssW+"px"; inkCanvas.style.height = cssH+"px";
-  ink.dpr = dpr; ink.cssW = cssW; ink.cssH = cssH;
-  if (!sign.strokes[i]) sign.strokes[i] = [];
-  redrawInk();
-  // pista visible solo en hoja sin firma
-  const hint = $("#signHint");
-  hint.style.opacity = (sign.strokes[i].length || sign.existing[i]) ? "0" : "1";
+  sign.view = { scale:1, tx:0, ty:0 };
+  clampView(); applyTransform();
+  renderStamps();
 }
 
-/* ---------- Dibujo con eventos de puntero (dedo / pluma con presión) ---------- */
-const ink = { dpr:1, cssW:0, cssH:0, drawing:false, cur:null };
-const ictx = inkCanvas.getContext("2d");
-
-function ptFromEvent(e){
-  const r = inkCanvas.getBoundingClientRect();
-  const x = (e.clientX - r.left) / r.width;   // normalizado 0..1
-  const y = (e.clientY - r.top)  / r.height;
-  let p = (e.pointerType === "pen" && e.pressure>0) ? e.pressure : 0.5;
-  return { x, y, p };
+/* ---------- Zoom / desplazamiento de la hoja (sin rayar) ---------- */
+function applyTransform(){
+  const v = sign.view;
+  pageWrap.style.transform = `translate(${v.tx}px, ${v.ty}px) scale(${v.scale})`;
 }
-function baseWidth(){ return parseFloat($("#penWidth").value) || 2.4; }
-
-function drawSegment(a, b){
-  const bw = baseWidth();
-  const w = bw * (0.45 + ((a.p+b.p)/2) * 1.25);
-  ictx.lineCap = "round"; ictx.lineJoin = "round";
-  ictx.strokeStyle = "#111111"; ictx.lineWidth = w;
-  ictx.beginPath();
-  ictx.moveTo(a.x*ink.cssW, a.y*ink.cssH);
-  ictx.lineTo(b.x*ink.cssW, b.y*ink.cssH);
-  ictx.stroke();
+function clampView(){
+  const v = sign.view;
+  const sw = sign.baseW * v.scale, sh = sign.baseH * v.scale;
+  const m = 40, W = stage.clientWidth, H = stage.clientHeight;
+  v.tx = sw <= W ? (W - sw)/2 : Math.min(m, Math.max(W - sw - m, v.tx));
+  v.ty = sh <= H ? (H - sh)/2 : Math.min(m, Math.max(H - sh - m, v.ty));
 }
-function redrawInk(){
-  ictx.setTransform(ink.dpr,0,0,ink.dpr,0,0);
-  ictx.clearRect(0,0,ink.cssW,ink.cssH);
-  const strokes = (sign && sign.strokes[sign.pageIndex]) || [];
-  for (const st of strokes){
-    for (let k=1;k<st.length;k++) drawSegment(st[k-1], st[k]);
-    if (st.length===1){ // punto suelto
-      const a=st[0]; ictx.fillStyle="#111"; ictx.beginPath();
-      ictx.arc(a.x*ink.cssW, a.y*ink.cssH, baseWidth()*0.6, 0, Math.PI*2); ictx.fill();
-    }
+function zoomAt(fx, fy, factor){
+  const v = sign.view;
+  const ns = clamp(v.scale * factor, 1, 6);
+  v.tx = fx - (fx - v.tx) * (ns / v.scale);
+  v.ty = fy - (fy - v.ty) * (ns / v.scale);
+  v.scale = ns; clampView(); applyTransform();
+}
+$("#zIn").addEventListener("click", ()=>{ if(sign) zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1.4); });
+$("#zOut").addEventListener("click",()=>{ if(sign) zoomAt(stage.clientWidth/2, stage.clientHeight/2, 1/1.4); });
+$("#zFit").addEventListener("click", ()=>{ if(!sign) return; sign.view={scale:1,tx:0,ty:0}; clampView(); applyTransform(); });
+
+// gestos sobre el escenario (pellizco + arrastre); NO dibuja
+const ptrs = new Map();
+let panLast = null, pinchStart = null;
+function stageXY(e){ const r = stage.getBoundingClientRect(); return { x:e.clientX-r.left, y:e.clientY-r.top }; }
+stage.addEventListener("pointerdown", (e)=>{
+  if (!sign) return;
+  if (e.target.closest(".stamp")) return;        // los sellos se mueven solos
+  if (e.target.closest(".zoomctl")) return;
+  stage.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, stageXY(e));
+  if (ptrs.size === 1){ panLast = stageXY(e); selectStamp(null); }
+  if (ptrs.size === 2){
+    const [a,b] = [...ptrs.values()];
+    pinchStart = { dist: Math.hypot(a.x-b.x, a.y-b.y), scale: sign.view.scale,
+                   cx:(a.x+b.x)/2, cy:(a.y+b.y)/2 };
   }
-}
-
-inkCanvas.addEventListener("pointerdown", (e)=>{
-  if(!sign) return;
-  inkCanvas.setPointerCapture(e.pointerId);
-  ink.drawing = true; sign.dirty = true;
-  ink.cur = [ ptFromEvent(e) ];
-  sign.strokes[sign.pageIndex].push(ink.cur);
-  $("#signHint").style.opacity = "0";
-  e.preventDefault();
 });
-inkCanvas.addEventListener("pointermove", (e)=>{
-  if(!ink.drawing || !ink.cur) return;
-  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-  for (const ev of evs){
-    const p = ptFromEvent(ev);
-    const last = ink.cur[ink.cur.length-1];
-    drawSegment(last, p);
-    ink.cur.push(p);
+stage.addEventListener("pointermove", (e)=>{
+  if (!sign || !ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, stageXY(e));
+  if (ptrs.size >= 2 && pinchStart){
+    const [a,b] = [...ptrs.values()];
+    const dist = Math.hypot(a.x-b.x, a.y-b.y);
+    const target = clamp(pinchStart.scale * (dist/pinchStart.dist), 1, 6);
+    zoomAt(pinchStart.cx, pinchStart.cy, target / sign.view.scale);
+  } else if (ptrs.size === 1 && panLast && sign.view.scale > 1){
+    const p = stageXY(e);
+    sign.view.tx += p.x - panLast.x; sign.view.ty += p.y - panLast.y;
+    panLast = p; clampView(); applyTransform();
   }
-  e.preventDefault();
-}, { passive:false });
-function endStroke(e){ if(ink.drawing){ ink.drawing=false; ink.cur=null; } }
-inkCanvas.addEventListener("pointerup", endStroke);
-inkCanvas.addEventListener("pointercancel", endStroke);
-inkCanvas.addEventListener("pointerleave", endStroke);
-
-$("#btnUndo").addEventListener("click", ()=>{
-  if(!sign) return;
-  const s = sign.strokes[sign.pageIndex];
-  if (s && s.length){ s.pop(); redrawInk(); sign.dirty = true; }
 });
-$("#btnClear").addEventListener("click", ()=>{
-  if(!sign) return;
-  sign.strokes[sign.pageIndex] = [];
-  delete sign.existing[sign.pageIndex];
-  redrawInk(); sign.dirty = true;
-});
-$("#penWidth").addEventListener("input", redrawInk);
+function stageUp(e){ ptrs.delete(e.pointerId); if(ptrs.size<2) pinchStart=null; if(ptrs.size===0) panLast=null; }
+stage.addEventListener("pointerup", stageUp);
+stage.addEventListener("pointercancel", stageUp);
 window.addEventListener("resize", ()=>{ if(sign) selectPage(sign.pageIndex); });
 
-/* ---------- Guardar firma (vuelca el lienzo a PNG en el resguardo) ---------- */
+/* ---------- Sellos de firma (arrastrar / ajustar / borrar) ---------- */
+function styleStamp(el, s){
+  el.style.left   = (s.nx*100)+"%";
+  el.style.top    = (s.ny*100)+"%";
+  el.style.width  = (s.nw*100)+"%";
+  el.style.height = (s.nh*100)+"%";
+}
+function renderStamps(){
+  stampsEl.innerHTML = "";
+  const list = sign.stamps[sign.pageIndex] || [];
+  for (const s of list){
+    const el = document.createElement("div");
+    el.className = "stamp" + (s.id===sign.selId ? " sel" : "");
+    el.dataset.id = s.id;
+    el.innerHTML = `<img src="${s.png}" alt="firma" /><button class="del" aria-label="Quitar firma">×</button><span class="handle"></span>`;
+    styleStamp(el, s);
+    attachStamp(el, s);
+    stampsEl.appendChild(el);
+  }
+  // dot de firma en miniatura + pista
+  const thumb = document.querySelector(`.thumb[data-i="${sign.pageIndex}"]`);
+  if (thumb) thumb.classList.toggle("has-sig", list.length>0);
+  $("#signHint").style.opacity = list.length ? "0" : "1";
+  $("#toolnote").textContent = list.length ? "Arrastra la firma sobre el nombre" : "Coloca tu firma sobre el nombre";
+}
+function selectStamp(id){
+  sign.selId = id;
+  document.querySelectorAll(".stamp").forEach(el=> el.classList.toggle("sel", el.dataset.id===id));
+}
+function attachStamp(el, s){
+  // mover
+  el.addEventListener("pointerdown", (e)=>{
+    if (e.target.classList.contains("handle") || e.target.classList.contains("del")) return;
+    e.stopPropagation(); el.setPointerCapture(e.pointerId);
+    selectStamp(s.id);
+    const start = { x:e.clientX, y:e.clientY, nx:s.nx, ny:s.ny };
+    el.style.cursor = "grabbing";
+    const move = (ev)=>{
+      const dx = (ev.clientX - start.x) / sign.view.scale / sign.baseW;
+      const dy = (ev.clientY - start.y) / sign.view.scale / sign.baseH;
+      s.nx = clamp(start.nx + dx, 0, 1 - s.nw);
+      s.ny = clamp(start.ny + dy, 0, 1 - s.nh);
+      styleStamp(el, s); sign.dirty = true;
+    };
+    const up = (ev)=>{ el.releasePointerCapture(ev.pointerId); el.removeEventListener("pointermove",move); el.removeEventListener("pointerup",up); el.style.cursor="grab"; };
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+  });
+  // ajustar tamaño (manteniendo proporción)
+  const handle = el.querySelector(".handle");
+  handle.addEventListener("pointerdown", (e)=>{
+    e.stopPropagation(); handle.setPointerCapture(e.pointerId);
+    selectStamp(s.id);
+    const start = { x:e.clientX, nw:s.nw };
+    const move = (ev)=>{
+      const dW = (ev.clientX - start.x) / sign.view.scale / sign.baseW;
+      let nw = clamp(start.nw + dW, 0.06, 1 - s.nx);
+      const visualW = nw * sign.baseW, visualH = visualW / s.aspect;
+      s.nw = nw; s.nh = clamp(visualH / sign.baseH, 0.02, 1 - s.ny);
+      styleStamp(el, s); sign.dirty = true;
+    };
+    const up = (ev)=>{ handle.releasePointerCapture(ev.pointerId); handle.removeEventListener("pointermove",move); handle.removeEventListener("pointerup",up); };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", up);
+  });
+  // borrar
+  el.querySelector(".del").addEventListener("click", (e)=>{
+    e.stopPropagation();
+    const list = sign.stamps[sign.pageIndex] || [];
+    const idx = list.findIndex(x=>x.id===s.id);
+    if (idx>=0) list.splice(idx,1);
+    sign.dirty = true; sign.selId = null; renderStamps();
+  });
+}
+
+function placeStamp(png, aspect){
+  const i = sign.pageIndex;
+  if (!sign.stamps[i]) sign.stamps[i] = [];
+  const nw = 0.32;
+  const visualH = (nw * sign.baseW) / aspect;
+  const nh = clamp(visualH / sign.baseH, 0.03, 0.5);
+  const st = { id:uid(), png, aspect, nw, nh,
+               nx: clamp(0.5 - nw/2, 0, 1-nw), ny: clamp(0.64 - nh/2, 0, 1-nh) };
+  sign.stamps[i].push(st);
+  sign.selId = st.id; sign.dirty = true;
+  renderStamps();
+}
+
+/* ---------- Recuadro para firmar (pad) ---------- */
+const padBg = $("#padBg"), padCanvas = $("#padCanvas"), pctx = padCanvas.getContext("2d");
+let padStrokes = [], padDraw = false, padCur = null, padDims = {w:0,h:0,dpr:1};
+
+function openPad(){
+  padBg.classList.add("show"); padBg.setAttribute("aria-hidden","false");
+  $("#padPh").style.display = "block";
+  requestAnimationFrame(()=>{
+    const r = padCanvas.getBoundingClientRect();
+    padDims.dpr = Math.min(window.devicePixelRatio||1, 2.5);
+    padDims.w = r.width; padDims.h = r.height;
+    padCanvas.width = Math.floor(r.width*padDims.dpr); padCanvas.height = Math.floor(r.height*padDims.dpr);
+    padStrokes = []; redrawPad();
+  });
+}
+function closePad(){ padBg.classList.remove("show"); padBg.setAttribute("aria-hidden","true"); }
+function padPt(e){
+  const r = padCanvas.getBoundingClientRect();
+  return { x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height,
+           p:(e.pointerType==="pen"&&e.pressure>0)?e.pressure:0.5 };
+}
+function padSeg(a,b){
+  const bw = baseWidth();
+  pctx.lineCap="round"; pctx.lineJoin="round"; pctx.strokeStyle="#111";
+  pctx.lineWidth = bw*(0.45+((a.p+b.p)/2)*1.3);
+  pctx.beginPath(); pctx.moveTo(a.x*padDims.w, a.y*padDims.h); pctx.lineTo(b.x*padDims.w, b.y*padDims.h); pctx.stroke();
+}
+function redrawPad(){
+  pctx.setTransform(padDims.dpr,0,0,padDims.dpr,0,0);
+  pctx.clearRect(0,0,padDims.w,padDims.h);
+  for (const st of padStrokes){ for(let k=1;k<st.length;k++) padSeg(st[k-1],st[k]); }
+}
+padCanvas.addEventListener("pointerdown",(e)=>{ padCanvas.setPointerCapture(e.pointerId); padDraw=true; padCur=[padPt(e)]; padStrokes.push(padCur); $("#padPh").style.display="none"; e.preventDefault(); });
+padCanvas.addEventListener("pointermove",(e)=>{ if(!padDraw||!padCur) return; const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e]; for(const ev of evs){ const p=padPt(ev); padSeg(padCur[padCur.length-1],p); padCur.push(p);} e.preventDefault(); },{passive:false});
+function padEnd(){ padDraw=false; padCur=null; }
+padCanvas.addEventListener("pointerup",padEnd); padCanvas.addEventListener("pointercancel",padEnd);
+$("#padUndo").addEventListener("click",()=>{ padStrokes.pop(); redrawPad(); if(!padStrokes.length) $("#padPh").style.display="block"; });
+$("#padClear").addEventListener("click",()=>{ padStrokes=[]; redrawPad(); $("#padPh").style.display="block"; });
+$("#padCancel").addEventListener("click", closePad);
+$("#penWidth").addEventListener("input", redrawPad);
+
+$("#padUse").addEventListener("click", async ()=>{
+  if (!padStrokes.length){ toast("Dibuja tu firma primero"); return; }
+  const sig = trimSignature();        // {png, aspect}
+  sign.lastSig = sig; $("#btnReuse").hidden = false;
+  placeStamp(sig.png, sig.aspect);
+  closePad();
+  toast("Arrastra la firma sobre el nombre");
+});
+$("#btnOpenPad").addEventListener("click", ()=>{ if(sign) openPad(); });
+$("#btnReuse").addEventListener("click", ()=>{ if(sign && sign.lastSig) placeStamp(sign.lastSig.png, sign.lastSig.aspect); });
+
+// recorta la firma a su contorno y la entrega como PNG nítido + proporción
+function trimSignature(){
+  let x0=1,y0=1,x1=0,y1=0;
+  for (const st of padStrokes) for (const pt of st){ x0=Math.min(x0,pt.x); y0=Math.min(y0,pt.y); x1=Math.max(x1,pt.x); y1=Math.max(y1,pt.y); }
+  const mx=0.04, my=0.08;
+  x0=clamp(x0-mx,0,1); y0=clamp(y0-my,0,1); x1=clamp(x1+mx,0,1); y1=clamp(y1+my,0,1);
+  const bw = Math.max(0.04, x1-x0), bh = Math.max(0.04, y1-y0);
+  const aspectPx = (bw*padDims.w) / (bh*padDims.h);
+  const OUT_W = 1000, OUT_H = Math.round(OUT_W / aspectPx);
+  const c = document.createElement("canvas"); c.width=OUT_W; c.height=OUT_H;
+  const g = c.getContext("2d");
+  g.lineCap="round"; g.lineJoin="round"; g.strokeStyle="#111";
+  const scaleW = baseWidth() * (OUT_W/(bw*padDims.w)) * 0.9;
+  const mapX = nx => ((nx - x0)/bw)*OUT_W, mapY = ny => ((ny - y0)/bh)*OUT_H;
+  for (const st of padStrokes){
+    for (let k=1;k<st.length;k++){ const a=st[k-1], b=st[k];
+      g.lineWidth = scaleW*(0.45+((a.p+b.p)/2)*1.3);
+      g.beginPath(); g.moveTo(mapX(a.x),mapY(a.y)); g.lineTo(mapX(b.x),mapY(b.y)); g.stroke(); }
+  }
+  return { png: c.toDataURL("image/png"), aspect: OUT_W/OUT_H };
+}
+
+/* ---------- Guardar firma ---------- */
 $("#btnSaveSig").addEventListener("click", async ()=>{
   if(!sign) return;
   const it = sign.item;
-  let touched = 0;
-  // genera PNG por cada hoja con trazos nuevos
-  for (const [iStr, strokes] of Object.entries(sign.strokes)){
-    const i = parseInt(iStr,10);
-    if (!strokes || strokes.length===0){
-      if (it.signatures[i] && !sign.existing[i]) { /* limpiada */ }
-      continue;
-    }
-    const png = strokesToPng(i);
-    if (png){ it.signatures[i] = png; touched++; }
+  it.signatures = {};
+  for (const k of Object.keys(sign.stamps)){
+    const i = parseInt(k,10);
+    const list = sign.stamps[i] || [];
+    if (list.length) it.signatures[i] = list.map(s=>({ png:s.png, nx:s.nx, ny:s.ny, nw:s.nw, nh:s.nh }));
   }
-  // hojas existentes que fueron limpiadas
-  for (const iStr of Object.keys(it.signatures)){
-    const i = parseInt(iStr,10);
-    const cleared = (!sign.strokes[i] || sign.strokes[i].length===0) && !sign.existing[i];
-    if (cleared) delete it.signatures[i];
-  }
-  const totalSigned = Object.keys(it.signatures).length;
-  if (totalSigned === 0){
-    it.status = "pendiente"; it.signedAt = null;
-  } else {
-    if (it.status==="pendiente" || it.status==="eliminado") it.status = "firmado";
-    it.signedAt = Date.now();
-  }
+  const total = Object.keys(it.signatures).length;
+  if (total === 0){ it.status = "pendiente"; it.signedAt = null; }
+  else { if (it.status==="pendiente" || it.status==="eliminado") it.status = "firmado"; it.signedAt = Date.now(); }
   await Store.put(it);
   sign.dirty = false;
-  await refresh();
-  closeSheet();
-  toast(totalSigned ? "Firma guardada" : "Firma eliminada");
+  await refresh(); closeSheet();
+  toast(total ? "Firma guardada" : "Firma eliminada");
 });
-
-// Re-renderiza una hoja a tamaño "natural" del PDF para una firma nítida al exportar
-function strokesToPng(i){
-  const strokes = sign.strokes[i];
-  if (!strokes || strokes.length===0) return null;
-  // tamaño base de la página
-  // usamos un canvas a 2x del ancho de página (puntos) para nitidez
-  const out = document.createElement("canvas");
-  // obtenemos proporción desde el viewport base ya conocido (cssW/cssH actuales solo si i===pageIndex)
-  // para robustez, recalculamos proporción con la página
-  // (síncrono: usamos la relación cssW/cssH si es la hoja activa; si no, proporción 1:√2)
-  let ratio = ink.cssW && ink.cssH ? (ink.cssW/ink.cssH) : (1/1.4142);
-  // mejor: usar proporción real de la hoja activa o recordada
-  const remembered = sign._ratios && sign._ratios[i];
-  if (remembered) ratio = remembered;
-  const W = 1200, H = Math.round(W / ratio);
-  out.width = W; out.height = H;
-  const c = out.getContext("2d");
-  c.lineCap="round"; c.lineJoin="round"; c.strokeStyle="#111111";
-  const bw = baseWidth() * (W / (ink.cssW||W)) * 0.9;
-  for (const st of strokes){
-    for (let k=1;k<st.length;k++){
-      const a=st[k-1], b=st[k];
-      c.lineWidth = bw * (0.45 + ((a.p+b.p)/2)*1.25);
-      c.beginPath(); c.moveTo(a.x*W,a.y*H); c.lineTo(b.x*W,b.y*H); c.stroke();
-    }
-    if (st.length===1){ const a=st[0]; c.fillStyle="#111"; c.beginPath(); c.arc(a.x*W,a.y*H,bw*0.6,0,Math.PI*2); c.fill(); }
-  }
-  return out.toDataURL("image/png");
-}
-
-// recordar proporción real de cada página al seleccionarla
-const _selectPage = selectPage;
-selectPage = async function(i){
-  await _selectPage(i);
-  if (sign){
-    sign._ratios = sign._ratios || {};
-    sign._ratios[i] = ink.cssW / ink.cssH;
-  }
-};
 
 /* ============================================================
    Filtros, búsqueda, papelera
@@ -998,7 +1285,36 @@ $("#dash").addEventListener("click", (e)=>{
 $("#search").addEventListener("input", (e)=>{ query = e.target.value.trim(); render(); });
 $("#btnTrash").addEventListener("click", ()=>{ showTrash = !showTrash; if(showTrash) filter="todos"; render(); });
 $("#btnLoad").addEventListener("click", loadViaPicker);
-$("#btnFolder").addEventListener("click", loadViaFolder);
+$("#btnFolder").addEventListener("click", linkOrSyncFolder);
+$("#btnSync").addEventListener("click", linkOrSyncFolder);
+$("#btnUnlink").addEventListener("click", unlinkFolder);
+
+/* ============================================================
+   Recibir PDFs desde otra app
+   1) "Abrir con / Compartir → Resguardos" abre el archivo en launchQueue
+   2) Compartir varios PDFs llega por el service worker → ?imported=N
+============================================================ */
+// (2) confirmación de archivos llegados por Compartir
+(function(){
+  const u = new URL(location.href);
+  if (u.searchParams.has("imported")){
+    const n = parseInt(u.searchParams.get("imported")||"0",10);
+    u.searchParams.delete("imported");
+    history.replaceState({}, "", u.pathname + (u.search ? "?"+u.searchParams.toString() : ""));
+    if (n) setTimeout(()=> toast(n===1 ? "1 PDF recibido" : n+" PDFs recibidos"), 500);
+  }
+})();
+// (1) File Handling API
+if ("launchQueue" in window && window.launchQueue && window.launchQueue.setConsumer){
+  window.launchQueue.setConsumer(async (params)=>{
+    if (!params || !params.files || !params.files.length) return;
+    let added = 0;
+    for (const handle of params.files){
+      try{ const f = await handle.getFile(); if(/\.pdf$/i.test(f.name)){ await addPdfFile(f); added++; } }catch(e){}
+    }
+    if (added){ await refresh(); toast(added===1 ? "1 PDF abierto" : added+" PDFs abiertos"); }
+  });
+}
 
 /* ============================================================
    Arranque
@@ -1007,6 +1323,8 @@ async function refresh(){ items = await Store.getAll(); render(); }
 
 (async function init(){
   await refresh();
+  await renderFolderBar();
+  autoSyncOnLaunch();   // jala PDFs nuevos de la carpeta enlazada (si ya hay permiso)
 })();
 
 /* ============================================================
