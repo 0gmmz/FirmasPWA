@@ -2,7 +2,7 @@
    - Cache-first del "app shell" + librerías (uso sin conexión).
    - Recibe PDFs compartidos desde otra app (Web Share Target) y los guarda
      directo en IndexedDB, sin servidor. Sube CACHE al cambiar index.html. */
-const CACHE = "resguardos-v2";
+const CACHE = "resguardos-v3";
 
 const ASSETS = [
   "./",
@@ -18,12 +18,13 @@ const ASSETS = [
 
 self.addEventListener("install", (e)=>{
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(()=>{})));
-  self.skipWaiting();
 });
 self.addEventListener("activate", (e)=>{
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
   self.clients.claim();
 });
+
+self.addEventListener("message", (e)=>{ if(e.data && e.data.type==="SKIP_WAITING") self.skipWaiting(); });
 
 /* ---------- IndexedDB (mismo esquema que la app) ---------- */
 function swOpenDB(){

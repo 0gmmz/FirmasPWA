@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-<meta name="theme-color" content="#1C1C1E" />
+<meta name="theme-color" content="#FAFAF9" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#17171A" media="(prefers-color-scheme: dark)" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Resguardos" />
@@ -23,6 +24,22 @@
     --shadow:0 1px 2px rgba(28,28,30,.05), 0 8px 24px -16px rgba(28,28,30,.18);
     --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  /* Modo oscuro automático según el sistema */
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#17171A; --surface:#1F1F23; --surface-2:#26262B;
+      --ink:#F4F4F5; --muted:#A1A1AA; --faint:#71717A;
+      --border:#2E2E34; --border-strong:#3F3F46;
+      --amber:#FBBF24; --amber-bg:#3A2E12;
+      --green:#4ADE80; --green-bg:#10301E;
+      --blue:#60A5FA;  --blue-bg:#16294A;
+      --red:#F87171;   --red-bg:#3A1A1A;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px -16px rgba(0,0,0,.6);
+    }
+    /* las firmas se dibujan e incrustan en hojas BLANCAS: el lienzo queda claro siempre */
+    .pad-canvas-wrap{ background:#fff !important; }
+    .page-wrap{ background:#fff; }
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; height:100%; }
@@ -254,6 +271,48 @@
   }
   #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
+  .updatebar{
+    position:fixed; left:50%; transform:translateX(-50%) translateY(80px);
+    bottom:calc(18px + env(safe-area-inset-bottom)); z-index:95;
+    display:flex; align-items:center; gap:12px; background:var(--ink); color:var(--bg);
+    padding:9px 9px 9px 16px; border-radius:999px; box-shadow:var(--shadow); transition:transform .25s ease;
+    max-width:92vw;
+  }
+  .updatebar.show{ transform:translateX(-50%) translateY(0); }
+  .updatebar span{ font-size:13.5px; font-weight:550; }
+  .updatebar .btn{ background:var(--bg); color:var(--ink); }
+
+  /* chips de firmas IT */
+  .itrow{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .itrow .lbl{ font-size:12px; color:var(--faint); font-family:var(--mono); text-transform:uppercase; letter-spacing:.04em; }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; padding:7px 11px; border-radius:999px;
+    border:1px solid var(--border-strong); background:var(--surface); color:var(--ink); font-size:13px; font-weight:550;
+  }
+  .chip .st{ width:7px; height:7px; border-radius:50%; background:var(--faint); }
+  .chip.ready .st{ background:var(--green); }
+  .chip:active{ transform:translateY(1px); }
+  .chip.mgr{ color:var(--muted); }
+
+  /* gestor de firmas */
+  .sigmgr{ display:flex; flex-direction:column; gap:8px; }
+  .sigmgr .row-item{ display:flex; align-items:center; gap:10px; border:1px solid var(--border); border-radius:10px; padding:8px 10px; }
+  .sigmgr .nm{ flex:1; min-width:0; }
+  .sigmgr .nm b{ font-size:13.5px; display:block; }
+  .sigmgr .nm span{ font-size:11px; color:var(--faint); font-family:var(--mono); }
+  .sigmgr .prev{ width:64px; height:34px; border:1px solid var(--border); border-radius:6px; background:#fff; object-fit:contain; }
+  .sigmgr .prev.empty{ display:flex; align-items:center; justify-content:center; color:var(--faint); font-size:10px; }
+
+  /* casilla "con fecha" en el pad */
+  .pad-opt{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); }
+  .pad-opt input{ width:17px; height:17px; accent-color:var(--ink); }
+  .pad-opt b{ color:var(--ink); font-family:var(--mono); font-weight:600; }
+
+  /* guía de línea de firma detectada */
+  .sigguide{ position:absolute; border:1.5px dashed var(--blue); border-radius:6px; background:rgba(37,99,235,.07);
+    pointer-events:none; display:flex; align-items:flex-end; justify-content:center; }
+  .sigguide b{ font-size:10px; color:var(--blue); background:var(--surface); padding:0 4px; transform:translateY(60%); white-space:nowrap; }
+
   .modal-bg{ position:fixed; inset:0; background:rgba(28,28,30,.4); z-index:80; display:none; align-items:center; justify-content:center; padding:24px; }
   .modal-bg.show{ display:flex; }
   .modal{ background:var(--surface); border-radius:16px; padding:20px; max-width:340px; width:100%; box-shadow:var(--shadow); }
@@ -380,8 +439,9 @@
       Firmar
     </button>
     <button class="btn btn-ghost" id="btnReuse" hidden>Reutilizar firma</button>
+    <button class="btn btn-ghost btn-sm" id="btnDetect" title="Ir a la línea de firma del resguardante">Línea de firma</button>
     <div class="grow"></div>
-    <span class="toolnote" id="toolnote">Coloca tu firma sobre el nombre</span>
+    <div class="itrow" id="itChips"></div>
   </div>
 </div>
 
@@ -401,9 +461,10 @@
       <span class="pad-ph" id="padPh">Firma aquí</span>
     </div>
     <div class="pad-actions">
+      <label class="pad-opt"><input type="checkbox" id="padDate" checked /> Agregar fecha <b id="padDatePreview">DD◦MM◦AAAA</b></label>
+      <div class="grow"></div>
       <button class="btn btn-ghost btn-sm" id="padClear">Limpiar</button>
       <button class="btn btn-ghost btn-sm" id="padUndo">Deshacer</button>
-      <div class="grow"></div>
       <button class="btn btn-ghost btn-sm" id="padCancel">Cancelar</button>
       <button class="btn btn-primary btn-sm" id="padUse">Usar firma</button>
     </div>
@@ -419,6 +480,23 @@
     <div class="row">
       <button class="btn btn-ghost btn-sm" id="modalCancel">Cancelar</button>
       <button class="btn btn-primary btn-sm" id="modalOk">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div class="updatebar" id="updatebar">
+  <span>Hay una actualización disponible.</span>
+  <button class="btn btn-sm" id="btnReload">Recargar</button>
+</div>
+
+<!-- Gestor de firmas de IT -->
+<div class="modal-bg" id="sigMgrBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sigMgrTitle" style="max-width:420px">
+    <h3 id="sigMgrTitle">Firmas guardadas (IT)</h3>
+    <p>Captura una vez la firma de cada persona; luego se coloca con un toque.</p>
+    <div id="sigMgrList" class="sigmgr"></div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn btn-ghost btn-sm" id="sigMgrClose">Cerrar</button>
     </div>
   </div>
 </div>
@@ -869,9 +947,16 @@ async function buildSignedBytes(it){
       const w = s.nw * W, h = s.nh * H;
       const x = s.nx * W;
       const y = H - (s.ny * H) - h;   // PDF: origen abajo-izquierda
+      // dibuja sobre el contenido de la página: la firma queda "quemada", no movible
       page.drawImage(png, { x, y, width:w, height:h });
     }
   }
+  // aplana campos de formulario (si los hubiera) para que nada quede editable
+  try{ const form = doc.getForm(); if (form) form.flatten(); }catch(e){}
+  try{
+    doc.setProducer("Firma de resguardos");
+    doc.setModificationDate(new Date());
+  }catch(e){}
   return await doc.save();
 }
 
@@ -934,6 +1019,123 @@ function baseWidth(){ return parseFloat($("#penWidth").value) || 2.6; }
 function imgAspect(src){
   return new Promise(res=>{ const im=new Image(); im.onload=()=>res((im.naturalWidth/im.naturalHeight)||2.2); im.onerror=()=>res(2.2); im.src=src; });
 }
+function loadImg(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
+const MONO_FONT = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+
+/* ---------- Fecha del día DD◦MM◦AAAA (separador dibujado como anillo) ---------- */
+function dateParts(){
+  const d = new Date();
+  return [ String(d.getDate()).padStart(2,"0"), String(d.getMonth()+1).padStart(2,"0"), String(d.getFullYear()) ];
+}
+function dateString(){ return dateParts().join("◦"); }
+function dateLayout(h){
+  const fontPx = Math.round(h*0.30);
+  const ctx = document.createElement("canvas").getContext("2d");
+  ctx.font = `600 ${fontPx}px ${MONO_FONT}`;
+  const parts = dateParts(), ringGap = fontPx*0.40;
+  let w = 0; parts.forEach((p,i)=>{ w += ctx.measureText(p).width; if(i<parts.length-1) w += ringGap*2; });
+  return { fontPx, parts, ringGap, width: Math.ceil(w) };
+}
+function drawDate(g, x, baselineY, h){
+  const L = dateLayout(h);
+  g.fillStyle = "#111"; g.strokeStyle = "#111"; g.textBaseline = "alphabetic";
+  g.font = `600 ${L.fontPx}px ${MONO_FONT}`;
+  let cx = x;
+  L.parts.forEach((p,i)=>{
+    g.fillText(p, cx, baselineY); cx += g.measureText(p).width;
+    if (i < L.parts.length-1){
+      cx += L.ringGap;
+      g.beginPath(); g.lineWidth = Math.max(1.4, L.fontPx*0.05);
+      g.arc(cx, baselineY - L.fontPx*0.30, L.fontPx*0.13, 0, Math.PI*2); g.stroke();
+      cx += L.ringGap;
+    }
+  });
+  return cx;
+}
+/* compone la firma con la fecha al lado, en un solo PNG nítido */
+async function composeSignature(sigPng, sigAspect, withDate){
+  if (!withDate) return { png:sigPng, aspect:sigAspect };
+  const img = await loadImg(sigPng);
+  const H = 240;
+  const sigW = Math.round(H*sigAspect);
+  const L = dateLayout(H);
+  const gap = Math.round(H*0.16), padR = Math.round(H*0.06);
+  const W = sigW + gap + L.width + padR;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.drawImage(img, 0, 0, sigW, H);
+  drawDate(g, sigW + gap, Math.round(H*0.62), H);
+  return { png: c.toDataURL("image/png"), aspect: W/H };
+}
+
+/* ---------- Detección de la línea de firma del resguardante (primero a la izquierda) ---------- */
+async function detectSignatureSpots(pageIdx0){
+  try{
+    const page = await sign.pdfDoc.getPage(pageIdx0+1);
+    const vp = page.getViewport({ scale:1 });
+    const tc = await page.getTextContent();
+    const W = vp.width, H = vp.height, cands = [];
+    for (const it of tc.items){
+      const s = (it.str||"").trim(); if(!s) continue;
+      if (/(firma|resguard|recib|nombre y firma|usuario|entreg|autoriz)/i.test(s)){
+        const tx = it.transform[4], ty = it.transform[5];
+        cands.push({ label:s, nx: tx/W, ny: 1 - (ty/H) });
+      }
+    }
+    if (!cands.length) return null;
+    let pool = cands.filter(c=>c.ny>0.45); if(!pool.length) pool = cands;
+    // el primero de la izquierda (menor x); a igualdad, el más abajo
+    pool.sort((a,b)=> (a.nx-b.nx) || (b.ny-a.ny));
+    return pool[0];
+  }catch(e){ return null; }
+}
+async function detectCurrent(){
+  if(!sign) return;
+  sign.spot = sign.spot || {};
+  const i = sign.pageIndex;
+  if (sign.spot[i] === undefined) sign.spot[i] = await detectSignatureSpots(i);
+}
+
+/* ---------- Firmas guardadas de IT ---------- */
+const IT_NAMES = ["Danilo Gómez", "Juan Carlos", "Gabriela Ortega"];
+let sigProfiles = [];
+async function loadProfiles(){
+  let p = await Store.getMeta("sigProfiles");
+  if (!Array.isArray(p) || !p.length){
+    p = IT_NAMES.map(n=>({ id: uid(), name:n, png:null, aspect:null }));
+    await Store.setMeta("sigProfiles", p);
+  }
+  sigProfiles = p;
+}
+async function saveProfileSignature(id, raw){
+  const p = sigProfiles.find(x=>x.id===id); if(!p) return;
+  p.png = raw.png; p.aspect = raw.aspect;
+  await Store.setMeta("sigProfiles", sigProfiles);
+  renderChips(); renderSigMgr();
+}
+async function clearProfileSignature(id){
+  const p = sigProfiles.find(x=>x.id===id); if(!p) return;
+  p.png = null; p.aspect = null;
+  await Store.setMeta("sigProfiles", sigProfiles);
+  renderChips(); renderSigMgr();
+}
+function renderChips(){
+  const row = $("#itChips"); if(!row) return;
+  row.innerHTML = `<span class="lbl">Firmas IT</span>` +
+    sigProfiles.map(p=>`<button class="chip ${p.png?"ready":""}" data-pid="${p.id}"><span class="st"></span>${escapeHtml(p.name.split(" ")[0])}</button>`).join("") +
+    `<button class="chip mgr" id="chipMgr" title="Gestionar firmas">⚙</button>`;
+}
+function renderSigMgr(){
+  const list = $("#sigMgrList"); if(!list) return;
+  list.innerHTML = sigProfiles.map(p=>`
+    <div class="row-item" data-pid="${p.id}">
+      ${p.png ? `<img class="prev" src="${p.png}" alt="firma de ${escapeHtml(p.name)}"/>` : `<div class="prev empty">sin firma</div>`}
+      <div class="nm"><b>${escapeHtml(p.name)}</b><span>${p.png?"firma guardada":"sin firma"}</span></div>
+      <button class="btn btn-ghost btn-sm" data-act="cap" data-pid="${p.id}">${p.png?"Actualizar":"Capturar"}</button>
+      ${p.png?`<button class="btn btn-ghost btn-sm danger" data-act="clr" data-pid="${p.id}">Borrar</button>`:""}
+    </div>`).join("");
+}
+
 
 let sign = null;
 // { item, pdfDoc, pageCount, pageIndex, stamps:{[i]:[{id,png,aspect,nx,ny,nw,nh}]},
@@ -957,6 +1159,7 @@ async function openSheet(it){
     }
     $("#sheetName").textContent = it.name;
     $("#btnReuse").hidden = !sign.lastSig;
+    renderChips();
     sheet.classList.add("show"); sheet.setAttribute("aria-hidden","false");
     document.body.style.overflow = "hidden";
     await buildThumbs();
@@ -1032,6 +1235,7 @@ async function selectPage(i){
 
   sign.view = { scale:1, tx:0, ty:0 };
   clampView(); applyTransform();
+  await detectCurrent();
   renderStamps();
 }
 
@@ -1113,11 +1317,22 @@ function renderStamps(){
     attachStamp(el, s);
     stampsEl.appendChild(el);
   }
-  // dot de firma en miniatura + pista
+  // guía de la línea de firma detectada (resguardante = primero a la izquierda)
+  const spot = sign.spot && sign.spot[sign.pageIndex];
+  if (spot && !list.length){
+    const nw = 0.30, nh = 0.075;
+    const g = document.createElement("div");
+    g.className = "sigguide";
+    g.style.left   = (clamp(spot.nx,0,1-nw)*100)+"%";
+    g.style.width  = (nw*100)+"%";
+    g.style.top    = (clamp(spot.ny - nh - 0.012,0,1-nh)*100)+"%";
+    g.style.height = (nh*100)+"%";
+    g.innerHTML = `<b>Resguardante</b>`;
+    stampsEl.appendChild(g);
+  }
   const thumb = document.querySelector(`.thumb[data-i="${sign.pageIndex}"]`);
   if (thumb) thumb.classList.toggle("has-sig", list.length>0);
   $("#signHint").style.opacity = list.length ? "0" : "1";
-  $("#toolnote").textContent = list.length ? "Arrastra la firma sobre el nombre" : "Coloca tu firma sobre el nombre";
 }
 function selectStamp(id){
   sign.selId = id;
@@ -1169,24 +1384,37 @@ function attachStamp(el, s){
   });
 }
 
-function placeStamp(png, aspect){
+// coloca un sello en la línea detectada (resguardante, primero a la izquierda)
+// o, si no hay, centrado en la parte baja de la hoja
+function placeStampAtSpot(png, aspect){
   const i = sign.pageIndex;
   if (!sign.stamps[i]) sign.stamps[i] = [];
-  const nw = 0.32;
+  const nw = 0.30;
   const visualH = (nw * sign.baseW) / aspect;
   const nh = clamp(visualH / sign.baseH, 0.03, 0.5);
-  const st = { id:uid(), png, aspect, nw, nh,
-               nx: clamp(0.5 - nw/2, 0, 1-nw), ny: clamp(0.64 - nh/2, 0, 1-nh) };
+  const spot = sign.spot && sign.spot[i];
+  let nx, ny;
+  if (spot){ nx = clamp(spot.nx, 0, 1-nw); ny = clamp(spot.ny - nh - 0.014, 0, 1-nh); }
+  else { nx = clamp(0.5 - nw/2, 0, 1-nw); ny = clamp(0.64 - nh/2, 0, 1-nh); }
+  const st = { id:uid(), png, aspect, nw, nh, nx, ny };
   sign.stamps[i].push(st);
   sign.selId = st.id; sign.dirty = true;
   renderStamps();
+}
+// compone (firma + fecha del día si withDate) y coloca
+async function placeSignature(raw, withDate){
+  const comp = await composeSignature(raw.png, raw.aspect, withDate);
+  placeStampAtSpot(comp.png, comp.aspect);
 }
 
 /* ---------- Recuadro para firmar (pad) ---------- */
 const padBg = $("#padBg"), padCanvas = $("#padCanvas"), pctx = padCanvas.getContext("2d");
 let padStrokes = [], padDraw = false, padCur = null, padDims = {w:0,h:0,dpr:1};
+let padTarget = null;   // id de perfil IT si se está capturando para alguien
 
-function openPad(){
+function openPad(forProfileId){
+  padTarget = forProfileId || null;
+  $("#padDatePreview").textContent = dateString();
   padBg.classList.add("show"); padBg.setAttribute("aria-hidden","false");
   $("#padPh").style.display = "block";
   requestAnimationFrame(()=>{
@@ -1197,7 +1425,7 @@ function openPad(){
     padStrokes = []; redrawPad();
   });
 }
-function closePad(){ padBg.classList.remove("show"); padBg.setAttribute("aria-hidden","true"); }
+function closePad(){ padBg.classList.remove("show"); padBg.setAttribute("aria-hidden","true"); padTarget=null; }
 function padPt(e){
   const r = padCanvas.getBoundingClientRect();
   return { x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height,
@@ -1225,14 +1453,48 @@ $("#penWidth").addEventListener("input", redrawPad);
 
 $("#padUse").addEventListener("click", async ()=>{
   if (!padStrokes.length){ toast("Dibuja tu firma primero"); return; }
-  const sig = trimSignature();        // {png, aspect}
-  sign.lastSig = sig; $("#btnReuse").hidden = false;
-  placeStamp(sig.png, sig.aspect);
+  const raw = trimSignature();              // firma sin fecha
+  const withDate = $("#padDate").checked;
+  const target = padTarget;
+  if (target){
+    await saveProfileSignature(target, raw); // guarda la firma de la persona de IT
+  } else {
+    sign.lastSig = raw; $("#btnReuse").hidden = false;
+  }
   closePad();
-  toast("Arrastra la firma sobre el nombre");
+  await placeSignature(raw, withDate);
+  toast("Arrastra la firma si necesitas ajustarla");
 });
 $("#btnOpenPad").addEventListener("click", ()=>{ if(sign) openPad(); });
-$("#btnReuse").addEventListener("click", ()=>{ if(sign && sign.lastSig) placeStamp(sign.lastSig.png, sign.lastSig.aspect); });
+$("#btnReuse").addEventListener("click", async ()=>{ if(sign && sign.lastSig) await placeSignature(sign.lastSig, true); });
+
+$("#btnDetect").addEventListener("click", async ()=>{
+  if(!sign) return;
+  await detectCurrent();
+  if (sign.spot[sign.pageIndex]){ renderStamps(); toast("Línea de firma del resguardante detectada"); }
+  else toast("No se detectó línea (¿PDF escaneado sin texto?)");
+});
+
+/* chips de firmas IT */
+$("#itChips").addEventListener("click", async (e)=>{
+  if (e.target.closest("#chipMgr")){ openSigMgr(); return; }
+  const chip = e.target.closest(".chip[data-pid]"); if(!chip || !sign) return;
+  const p = sigProfiles.find(x=>x.id===chip.dataset.pid); if(!p) return;
+  if (!p.png){ toast(`Captura primero la firma de ${p.name}`); openPad(p.id); return; }
+  await placeSignature({ png:p.png, aspect:p.aspect }, true);
+  toast(`Firma de ${p.name} colocada`);
+});
+
+/* gestor de firmas IT */
+function openSigMgr(){ renderSigMgr(); $("#sigMgrBg").classList.add("show"); }
+$("#sigMgrClose").addEventListener("click", ()=> $("#sigMgrBg").classList.remove("show"));
+$("#sigMgrBg").addEventListener("click", (e)=>{ if(e.target.id==="sigMgrBg") e.currentTarget.classList.remove("show"); });
+$("#sigMgrList").addEventListener("click", async (e)=>{
+  const btn = e.target.closest("[data-act]"); if(!btn) return;
+  const id = btn.dataset.pid, act = btn.dataset.act;
+  if (act==="cap"){ $("#sigMgrBg").classList.remove("show"); if(sign) openPad(id); else toast("Abre un resguardo para capturar la firma"); }
+  if (act==="clr"){ await clearProfileSignature(id); }
+});
 
 // recorta la firma a su contorno y la entrega como PNG nítido + proporción
 function trimSignature(){
@@ -1323,17 +1585,38 @@ async function refresh(){ items = await Store.getAll(); render(); }
 
 (async function init(){
   await refresh();
+  await loadProfiles();
   await renderFolderBar();
   autoSyncOnLaunch();   // jala PDFs nuevos de la carpeta enlazada (si ya hay permiso)
 })();
 
 /* ============================================================
-   Service worker (solo cuando está desplegado en HTTPS)
+   Service worker + aviso de actualización
+   Al subir una versión nueva, la app muestra "Recargar" (no reinstalar).
 ============================================================ */
 if ("serviceWorker" in navigator){
-  window.addEventListener("load", ()=>{
-    navigator.serviceWorker.register("sw.js").catch(()=>{ /* en vista previa puede no registrarse; es normal */ });
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", ()=>{
+    if (refreshing) return; refreshing = true; location.reload();
   });
+  window.addEventListener("load", async ()=>{
+    try{
+      const reg = await navigator.serviceWorker.register("sw.js");
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdate(reg.waiting);
+      reg.addEventListener("updatefound", ()=>{
+        const nw = reg.installing; if(!nw) return;
+        nw.addEventListener("statechange", ()=>{
+          if (nw.state==="installed" && navigator.serviceWorker.controller) showUpdate(nw);
+        });
+      });
+      // revisa si hay versión nueva al volver a la app
+      document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) reg.update().catch(()=>{}); });
+    }catch(e){ /* en vista previa puede no registrarse; es normal */ }
+  });
+}
+function showUpdate(worker){
+  const bar = $("#updatebar"); bar.classList.add("show");
+  $("#btnReload").onclick = ()=>{ bar.classList.remove("show"); worker.postMessage({ type:"SKIP_WAITING" }); };
 }
 })();
 </script>
