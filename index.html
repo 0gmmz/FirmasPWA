@@ -40,6 +40,12 @@
     /* las firmas se dibujan e incrustan en hojas BLANCAS: el lienzo queda claro siempre */
     .pad-canvas-wrap{ background:#fff !important; }
     .page-wrap{ background:#fff; }
+    /* texto de etiquetas legible sobre tintes oscuros */
+    .b-pendiente{ color:#FCD34D; } .b-firmado{ color:#86EFAC; }
+    .b-por_exportar{ color:#93C5FD; } .b-eliminado{ color:#FCA5A5; }
+    .queuebar{ border-color:#1E3A5F; }
+    .queuebar #btnExportAll{ background:var(--surface-2) !important; color:var(--blue) !important; border-color:#1E3A5F !important; }
+    .sigmgr .prev{ background:#fff; }
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; height:100%; }
@@ -82,8 +88,8 @@
     border:1px solid transparent; transition:transform .04s ease, background .12s ease;
   }
   .btn:active{ transform:translateY(1px); }
-  .btn-primary{ background:var(--ink); color:#fff; }
-  .btn-primary:hover{ background:#000; }
+  .btn-primary{ background:var(--ink); color:var(--bg); }
+  .btn-primary:hover{ opacity:.9; }
   .btn-ghost{ background:var(--surface); border-color:var(--border-strong); color:var(--ink); }
   .btn-ghost:hover{ background:var(--surface-2); }
   .btn-sm{ padding:8px 11px; font-size:13.5px; }
@@ -241,13 +247,29 @@
   .zoomctl button:active{ background:var(--surface-2); }
 
   .sign-tools{
-    display:flex; align-items:center; gap:10px; padding:11px 14px; border-top:1px solid var(--border);
-    background:var(--surface); flex-wrap:wrap;
+    display:flex; align-items:center; gap:8px; padding:11px 14px calc(11px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--border); background:var(--surface); flex-wrap:wrap;
   }
   .toolnote{ font-size:12.5px; color:var(--muted); }
   .pentip{ display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--muted); }
-  .pentip input[type=range]{ width:108px; accent-color:var(--ink); }
+  .pentip input[type=range]{ width:100px; max-width:34vw; accent-color:var(--ink); }
   .grow{ flex:1; }
+
+  /* menú desplegable de firmas IT */
+  .itmenu{ position:relative; }
+  .itpop{
+    position:absolute; right:0; bottom:calc(100% + 8px); min-width:210px; z-index:30;
+    background:var(--surface); border:1px solid var(--border-strong); border-radius:12px;
+    box-shadow:var(--shadow); padding:6px; display:flex; flex-direction:column; gap:2px;
+  }
+  .itpop[hidden]{ display:none; }
+  .itpop button{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    padding:11px 12px; border-radius:9px; font-size:14.5px; color:var(--ink); }
+  .itpop button:hover{ background:var(--surface-2); }
+  .itpop .st{ width:9px; height:9px; border-radius:50%; background:var(--faint); flex:0 0 auto; }
+  .itpop button.ready .st{ background:var(--green); }
+  .itpop .sep{ height:1px; background:var(--border); margin:4px 2px; }
+  .itpop .mgr{ color:var(--muted); font-size:13.5px; }
 
   /* ---------- Recuadro para firmar (pad) ---------- */
   .pad-bg{ position:fixed; inset:0; background:rgba(28,28,30,.5); z-index:70; display:none; align-items:flex-end; justify-content:center; }
@@ -261,12 +283,15 @@
   #padCanvas{ display:block; width:100%; height:100%; touch-action:none; cursor:crosshair; position:relative; z-index:2; }
   .pad-baseline{ position:absolute; left:18px; right:18px; bottom:48px; border-bottom:1.5px dashed var(--border-strong); z-index:1; }
   .pad-ph{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:var(--faint); font-size:15px; z-index:1; pointer-events:none; }
-  .pad-actions{ display:flex; align-items:center; gap:8px; margin-top:12px; }
+  .pad-actions{ display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+  .pad-btns{ display:flex; flex-wrap:wrap; gap:8px; }
+  .pad-btns .btn{ flex:1 1 auto; min-width:84px; justify-content:center; }
+  .pad-btns #padUse{ flex:1 1 100%; order:9; padding:12px; font-size:15px; }
 
   /* ---------- Toast & dialog ---------- */
   #toast{
     position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px);
-    background:var(--ink); color:#fff; padding:11px 17px; border-radius:999px; font-size:13.5px; font-weight:550;
+    background:var(--ink); color:var(--bg); padding:11px 17px; border-radius:999px; font-size:13.5px; font-weight:550;
     z-index:90; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; max-width:90vw; text-align:center;
   }
   #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
@@ -438,10 +463,16 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 21l3-1 11-11-2-2L4 18l-1 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m14 5 3-3 4 4-3 3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
       Firmar
     </button>
-    <button class="btn btn-ghost" id="btnReuse" hidden>Reutilizar firma</button>
+    <button class="btn btn-ghost btn-sm" id="btnReuse" hidden>Reutilizar</button>
     <button class="btn btn-ghost btn-sm" id="btnDetect" title="Ir a la línea de firma del resguardante">Línea de firma</button>
     <div class="grow"></div>
-    <div class="itrow" id="itChips"></div>
+    <div class="itmenu">
+      <button class="btn btn-ghost btn-sm" id="btnIT" aria-haspopup="true" aria-expanded="false">
+        Firmas IT
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="margin-left:2px"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="itpop" id="itPop" hidden></div>
+    </div>
   </div>
 </div>
 
@@ -462,11 +493,12 @@
     </div>
     <div class="pad-actions">
       <label class="pad-opt"><input type="checkbox" id="padDate" checked /> Agregar fecha <b id="padDatePreview">DD◦MM◦AAAA</b></label>
-      <div class="grow"></div>
-      <button class="btn btn-ghost btn-sm" id="padClear">Limpiar</button>
-      <button class="btn btn-ghost btn-sm" id="padUndo">Deshacer</button>
-      <button class="btn btn-ghost btn-sm" id="padCancel">Cancelar</button>
-      <button class="btn btn-primary btn-sm" id="padUse">Usar firma</button>
+      <div class="pad-btns">
+        <button class="btn btn-ghost btn-sm" id="padClear">Limpiar</button>
+        <button class="btn btn-ghost btn-sm" id="padUndo">Deshacer</button>
+        <button class="btn btn-ghost btn-sm" id="padCancel">Cancelar</button>
+        <button class="btn btn-primary" id="padUse">Usar firma</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1074,20 +1106,34 @@ async function detectSignatureSpots(pageIdx0){
     const page = await sign.pdfDoc.getPage(pageIdx0+1);
     const vp = page.getViewport({ scale:1 });
     const tc = await page.getTextContent();
-    const W = vp.width, H = vp.height, cands = [];
+    const W = vp.width, H = vp.height;
+    // etiquetas FUERTES de bloque de firma (el resguardante es "Nombre y Firma del Responsable")
+    const STRONG = /(nombre y firma|firma del responsable|del responsable|responsable|resguardante)/i;
+    // evitar el párrafo legal ("Recibí de conformidad… bajo mi resguardo…")
+    const NOISE  = /(recib|conformidad|bajo mi|art[íi]culo|ley|fracc|reposici[óo]n|invocada|inventariado)/i;
+    const strong = [], weak = [];
     for (const it of tc.items){
-      const s = (it.str||"").trim(); if(!s) continue;
-      if (/(firma|resguard|recib|nombre y firma|usuario|entreg|autoriz)/i.test(s)){
-        const tx = it.transform[4], ty = it.transform[5];
-        cands.push({ label:s, nx: tx/W, ny: 1 - (ty/H) });
-      }
+      const s = (it.str||"").trim(); if(!s || s.length<4) continue;
+      const tx = it.transform[4], ty = it.transform[5];
+      const c = { label:s, nx: tx/W, ny: 1 - (ty/H) };
+      if (c.ny <= 0.5) continue;                 // solo parte baja de la hoja
+      if (NOISE.test(s)) continue;               // descarta el cuerpo de texto legal
+      if (STRONG.test(s)) strong.push(c);
+      else if (/firma/i.test(s)) weak.push(c);
     }
-    if (!cands.length) return null;
-    let pool = cands.filter(c=>c.ny>0.45); if(!pool.length) pool = cands;
-    // el primero de la izquierda (menor x); a igualdad, el más abajo
-    pool.sort((a,b)=> (a.nx-b.nx) || (b.ny-a.ny));
+    let pool = strong.length ? strong : weak;
+    if (!pool.length) return null;
+    // resguardante = el primero de la izquierda (menor x)
+    pool.sort((a,b)=> (a.nx-b.nx) || (a.ny-b.ny));
     return pool[0];
   }catch(e){ return null; }
+}
+// caja donde cae la firma: SOBRE la etiqueta (en la línea en blanco, arriba del nombre)
+function spotBox(spot, nw, nh){
+  return {
+    nx: clamp(spot.nx, 0, 1-nw),
+    ny: clamp(spot.ny - nh - 0.030, 0, 1-nh)   // se levanta para quedar sobre la línea
+  };
 }
 async function detectCurrent(){
   if(!sign) return;
@@ -1111,19 +1157,24 @@ async function saveProfileSignature(id, raw){
   const p = sigProfiles.find(x=>x.id===id); if(!p) return;
   p.png = raw.png; p.aspect = raw.aspect;
   await Store.setMeta("sigProfiles", sigProfiles);
-  renderChips(); renderSigMgr();
+  renderITMenu(); renderSigMgr();
 }
 async function clearProfileSignature(id){
   const p = sigProfiles.find(x=>x.id===id); if(!p) return;
   p.png = null; p.aspect = null;
   await Store.setMeta("sigProfiles", sigProfiles);
-  renderChips(); renderSigMgr();
+  renderITMenu(); renderSigMgr();
 }
-function renderChips(){
-  const row = $("#itChips"); if(!row) return;
-  row.innerHTML = `<span class="lbl">Firmas IT</span>` +
-    sigProfiles.map(p=>`<button class="chip ${p.png?"ready":""}" data-pid="${p.id}"><span class="st"></span>${escapeHtml(p.name.split(" ")[0])}</button>`).join("") +
-    `<button class="chip mgr" id="chipMgr" title="Gestionar firmas">⚙</button>`;
+function renderITMenu(){
+  const pop = $("#itPop"); if(!pop) return;
+  pop.innerHTML =
+    sigProfiles.map(p=>`<button class="${p.png?"ready":""}" data-pid="${p.id}"><span class="st"></span>${escapeHtml(p.name)}${p.png?"":" · sin firma"}</button>`).join("") +
+    `<div class="sep"></div><button class="mgr" data-mgr="1">⚙ Gestionar firmas…</button>`;
+}
+function toggleITMenu(open){
+  const pop = $("#itPop"), btn = $("#btnIT");
+  const show = open!==undefined ? open : pop.hidden;
+  pop.hidden = !show; btn.setAttribute("aria-expanded", String(show));
 }
 function renderSigMgr(){
   const list = $("#sigMgrList"); if(!list) return;
@@ -1159,7 +1210,7 @@ async function openSheet(it){
     }
     $("#sheetName").textContent = it.name;
     $("#btnReuse").hidden = !sign.lastSig;
-    renderChips();
+    renderITMenu();
     sheet.classList.add("show"); sheet.setAttribute("aria-hidden","false");
     document.body.style.overflow = "hidden";
     await buildThumbs();
@@ -1321,11 +1372,12 @@ function renderStamps(){
   const spot = sign.spot && sign.spot[sign.pageIndex];
   if (spot && !list.length){
     const nw = 0.30, nh = 0.075;
+    const b = spotBox(spot, nw, nh);
     const g = document.createElement("div");
     g.className = "sigguide";
-    g.style.left   = (clamp(spot.nx,0,1-nw)*100)+"%";
+    g.style.left   = (b.nx*100)+"%";
     g.style.width  = (nw*100)+"%";
-    g.style.top    = (clamp(spot.ny - nh - 0.012,0,1-nh)*100)+"%";
+    g.style.top    = (b.ny*100)+"%";
     g.style.height = (nh*100)+"%";
     g.innerHTML = `<b>Resguardante</b>`;
     stampsEl.appendChild(g);
@@ -1394,8 +1446,8 @@ function placeStampAtSpot(png, aspect){
   const nh = clamp(visualH / sign.baseH, 0.03, 0.5);
   const spot = sign.spot && sign.spot[i];
   let nx, ny;
-  if (spot){ nx = clamp(spot.nx, 0, 1-nw); ny = clamp(spot.ny - nh - 0.014, 0, 1-nh); }
-  else { nx = clamp(0.5 - nw/2, 0, 1-nw); ny = clamp(0.64 - nh/2, 0, 1-nh); }
+  if (spot){ const b = spotBox(spot, nw, nh); nx = b.nx; ny = b.ny; }
+  else { nx = clamp(0.5 - nw/2, 0, 1-nw); ny = clamp(0.60 - nh/2, 0, 1-nh); }
   const st = { id:uid(), png, aspect, nw, nh, nx, ny };
   sign.stamps[i].push(st);
   sign.selId = st.id; sign.dirty = true;
@@ -1475,14 +1527,19 @@ $("#btnDetect").addEventListener("click", async ()=>{
   else toast("No se detectó línea (¿PDF escaneado sin texto?)");
 });
 
-/* chips de firmas IT */
-$("#itChips").addEventListener("click", async (e)=>{
-  if (e.target.closest("#chipMgr")){ openSigMgr(); return; }
-  const chip = e.target.closest(".chip[data-pid]"); if(!chip || !sign) return;
-  const p = sigProfiles.find(x=>x.id===chip.dataset.pid); if(!p) return;
+/* menú desplegable de firmas IT */
+$("#btnIT").addEventListener("click", (e)=>{ e.stopPropagation(); renderITMenu(); toggleITMenu(); });
+$("#itPop").addEventListener("click", async (e)=>{
+  const item = e.target.closest("button"); if(!item) return;
+  e.stopPropagation(); toggleITMenu(false);
+  if (item.dataset.mgr){ openSigMgr(); return; }
+  const p = sigProfiles.find(x=>x.id===item.dataset.pid); if(!p || !sign) return;
   if (!p.png){ toast(`Captura primero la firma de ${p.name}`); openPad(p.id); return; }
   await placeSignature({ png:p.png, aspect:p.aspect }, true);
   toast(`Firma de ${p.name} colocada`);
+});
+document.addEventListener("click", (e)=>{
+  if (!$("#itPop").hidden && !e.target.closest(".itmenu")) toggleITMenu(false);
 });
 
 /* gestor de firmas IT */
