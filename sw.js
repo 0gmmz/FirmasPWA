@@ -2,7 +2,7 @@
    - Cache-first del "app shell" + librerías (uso sin conexión).
    - Recibe PDFs compartidos desde otra app (Web Share Target) y los guarda
      directo en IndexedDB, sin servidor. Sube CACHE al cambiar index.html. */
-const CACHE = "resguardos-v4";
+const CACHE = "resguardos-v5";
 
 const ASSETS = [
   "./",
@@ -44,7 +44,7 @@ async function swAddResguardo(fileName, buf){
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
   const item = {
     id, name: (fileName||"compartido").replace(/\.pdf$/i,""), fileName: fileName||"compartido.pdf",
-    status:"pendiente", size: buf.byteLength, pages:null, pdf: buf, signatures:{},
+    status:"pendiente", size: buf.byteLength, pages:null, pdf: buf, signatures:{}, firmasReq:3,
     createdAt: Date.now(), signedAt:null, exportedAt:null
   };
   await new Promise((res, rej)=>{
