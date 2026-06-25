@@ -42,7 +42,7 @@
     .page-wrap{ background:#fff; }
     /* texto de etiquetas legible sobre tintes oscuros */
     .b-pendiente{ color:#FCD34D; } .b-firmado{ color:#86EFAC; }
-    .b-por_exportar{ color:#93C5FD; } .b-eliminado{ color:#FCA5A5; } .b-parcial{ color:#FCD34D; }
+    .b-exportado{ color:#93C5FD; } .b-eliminado{ color:#FCA5A5; } .b-parcial{ color:#FCD34D; }
     .queuebar{ border-color:#1E3A5F; }
     .queuebar #btnExportAll{ background:var(--surface-2) !important; color:var(--blue) !important; border-color:#1E3A5F !important; }
     .sigmgr .prev{ background:#fff; }
@@ -154,7 +154,7 @@
   .card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--border-strong); }
   .card.s-pendiente::before{ background:var(--amber); }
   .card.s-firmado::before{ background:var(--green); }
-  .card.s-por_exportar::before{ background:var(--blue); }
+  .card.s-exportado::before{ background:var(--blue); }
   .card.s-eliminado::before{ background:var(--red); }
   .card-top{ display:flex; align-items:flex-start; gap:12px; }
   .card-main{ flex:1; min-width:0; }
@@ -171,7 +171,7 @@
   .badge .dot{ width:7px; height:7px; border-radius:50%; }
   .b-pendiente{ background:var(--amber-bg); color:#92400E; } .b-pendiente .dot{ background:var(--amber); }
   .b-firmado{ background:var(--green-bg); color:#166534; } .b-firmado .dot{ background:var(--green); }
-  .b-por_exportar{ background:var(--blue-bg); color:#1E40AF; } .b-por_exportar .dot{ background:var(--blue); }
+  .b-exportado{ background:var(--blue-bg); color:#1E40AF; } .b-exportado .dot{ background:var(--blue); }
   .b-eliminado{ background:var(--red-bg); color:#991B1B; } .b-eliminado .dot{ background:var(--red); }
 
   .actions{ display:flex; flex-wrap:wrap; gap:7px; }
@@ -411,9 +411,9 @@
       <span class="n mono" id="c-firmado">0</span>
       <span class="l"><span class="swatch sw-firm"></span>Firmados</span>
     </button>
-    <button class="stat" data-filter="por_exportar" aria-pressed="false">
-      <span class="n mono" id="c-por_exportar">0</span>
-      <span class="l"><span class="swatch sw-exp"></span>Por exportar</span>
+    <button class="stat" data-filter="exportado" aria-pressed="false">
+      <span class="n mono" id="c-exportado">0</span>
+      <span class="l"><span class="swatch sw-exp"></span>Exportados</span>
     </button>
   </section>
 
@@ -429,12 +429,12 @@
   </div>
 
   <div class="queuebar" id="queuebar">
-    <span id="queuetext">0 en cola para exportar</span>
-    <button class="btn btn-sm" style="background:#fff;color:var(--blue);border:1px solid #BFDBFE" id="btnExportAll">Exportar todos</button>
+    <span id="queuetext">0 firmados listos</span>
+    <button class="btn btn-sm" style="background:#fff;color:var(--blue);border:1px solid #BFDBFE" id="btnExportAll">Exportar a carpeta</button>
   </div>
 
   <div class="listmeta">
-    <span class="count" id="listcount">0 resguardos</span>
+    <span class="count" id="listcount"></span>
     <button class="trash-link" id="btnTrash" hidden>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
       Papelera (<span id="trashcount">0</span>)
@@ -482,11 +482,9 @@
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="margin-left:2px"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <div class="grow"></div>
-    <div class="reqctl" title="Firmas que requiere este resguardo">
+    <div class="reqctl" title="Firmas colocadas / requeridas">
       <span>Requiere</span>
-      <button id="reqMinus" aria-label="Menos firmas">−</button>
-      <b id="reqVal">3</b>
-      <button id="reqPlus" aria-label="Más firmas">+</button>
+      <b id="reqVal">0/3</b>
     </div>
   </div>
 </div>
@@ -498,7 +496,7 @@
       <span>Firma dentro del recuadro</span>
       <div class="pentip">
         <span>Trazo</span>
-        <input id="penWidth" type="range" min="1" max="6" step="0.5" value="2.6" />
+        <input id="penWidth" type="range" min="1" max="6" step="0.5" value="4" />
       </div>
     </div>
     <div class="pad-canvas-wrap">
@@ -507,7 +505,6 @@
       <span class="pad-ph" id="padPh">Firma aquí</span>
     </div>
     <div class="pad-actions">
-      <label class="pad-opt"><input type="checkbox" id="padDate" checked /> Agregar fecha <b id="padDatePreview">DD◦MM◦AAAA</b></label>
       <div class="pad-btns">
         <button class="btn btn-ghost btn-sm" id="padClear">Limpiar</button>
         <button class="btn btn-ghost btn-sm" id="padUndo">Deshacer</button>
@@ -671,10 +668,10 @@ const Store = (function(){
    Estado y utilidades
 ============================================================ */
 const STATUS = {
-  pendiente:    { label:"Pendiente",    es:"pendiente" },
-  firmado:      { label:"Firmado",      es:"firmado" },
-  por_exportar: { label:"Por exportar", es:"por_exportar" },
-  eliminado:    { label:"Eliminado",    es:"eliminado" },
+  pendiente: { label:"Pendiente", es:"pendiente" },
+  firmado:   { label:"Firmado",   es:"firmado" },
+  exportado: { label:"Exportado", es:"exportado" },
+  eliminado: { label:"Eliminado", es:"eliminado" },
 };
 const $ = s => document.querySelector(s);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
@@ -855,10 +852,10 @@ $("#fileInput").addEventListener("change", async (e)=>{
    Render del tablero y la lista
 ============================================================ */
 function counts(){
-  const c = { todos:0, pendiente:0, firmado:0, por_exportar:0, eliminado:0 };
+  const c = { todos:0, pendiente:0, firmado:0, exportado:0, eliminado:0 };
   for (const it of items){
     if (it.status==="eliminado"){ c.eliminado++; continue; }
-    c.todos++; c[it.status]++;
+    c.todos++; if (c[it.status]!=null) c[it.status]++;
   }
   return c;
 }
@@ -884,11 +881,20 @@ function sigCountOf(it){
 function reqOf(it){ return it.firmasReq || 3; }
 function isPartial(it){ return it.status==="firmado" && sigCountOf(it) < reqOf(it); }
 
+function greenShade(ratio){
+  // 1/3 verde claro → 3/3 verde fuerte
+  const r = Math.max(0, Math.min(1, ratio));
+  const light = Math.round(60 - r*26);   // 60% → 34%
+  return `hsl(146 52% ${light}%)`;
+}
 function badge(it){
   if (it.status==="firmado"){
     const n = sigCountOf(it), r = reqOf(it);
-    if (n < r) return `<span class="badge b-parcial"><span class="dot"></span>Firmado ${n}/${r}</span>`;
-    return `<span class="badge b-firmado"><span class="dot"></span>Firmado</span>`;
+    const col = greenShade(n/r);
+    if (n < r){
+      return `<span class="badge" style="background:${greenShade(n/r)}1f;color:${col}"><span class="dot" style="background:${col}"></span>Firmado ${n}/${r}</span>`;
+    }
+    return `<span class="badge" style="background:${col}1f;color:${col}"><span class="dot" style="background:${col}"></span>Firmado</span>`;
   }
   const s = STATUS[it.status];
   return `<span class="badge b-${it.status}"><span class="dot"></span>${s.label}</span>`;
@@ -903,12 +909,10 @@ function cardActions(it){
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 21l3-1 11-11-2-2L4 18l-1 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m14 5 3-3 4 4-3 3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
       ${it.status==="pendiente" ? "Firmar" : "Volver a firmar"}</button>`;
   if (it.status==="firmado"){
-    html += `<button class="btn btn-ghost" data-act="queue" data-id="${it.id}">Marcar por exportar</button>`;
     html += `<button class="btn btn-ghost" data-act="export" data-id="${it.id}">Exportar</button>`;
   }
-  if (it.status==="por_exportar"){
-    html += `<button class="btn btn-ghost" data-act="export" data-id="${it.id}">Exportar ahora</button>`;
-    html += `<button class="btn btn-ghost" data-act="unqueue" data-id="${it.id}">Quitar de cola</button>`;
+  if (it.status==="exportado"){
+    html += `<button class="btn btn-ghost" data-act="export" data-id="${it.id}">Exportar de nuevo</button>`;
   }
   html += `<button class="btn btn-ghost danger" data-act="delete" data-id="${it.id}">Eliminar</button>`;
   return html;
@@ -919,28 +923,30 @@ function render(){
   $("#c-todos").textContent = c.todos;
   $("#c-pendiente").textContent = c.pendiente;
   $("#c-firmado").textContent = c.firmado;
-  $("#c-por_exportar").textContent = c.por_exportar;
+  $("#c-exportado").textContent = c.exportado;
 
   document.querySelectorAll(".stat").forEach(b=>{
     b.setAttribute("aria-pressed", String(!showTrash && b.dataset.filter===filter));
   });
 
-  // cola de exportación
+  // barra: exportar todos los firmados a la carpeta
   const qb = $("#queuebar");
-  if (c.por_exportar > 0 && !showTrash){ qb.classList.add("show"); $("#queuetext").textContent = c.por_exportar + (c.por_exportar===1?" resguardo en cola":" resguardos en cola"); }
-  else qb.classList.remove("show");
+  if (c.firmado > 0 && !showTrash){
+    qb.classList.add("show");
+    $("#queuetext").textContent = c.firmado + (c.firmado===1?" firmado listo" : " firmados listos");
+  } else qb.classList.remove("show");
 
   // papelera
   const tb = $("#btnTrash");
   $("#trashcount").textContent = c.eliminado;
   tb.hidden = c.eliminado===0 && !showTrash;
   tb.classList.toggle("danger", showTrash);
-  tb.querySelector("svg")?.setAttribute("aria-hidden","true");
 
   const arr = visibleItems();
-  $("#listcount").textContent = showTrash
-    ? (c.eliminado + (c.eliminado===1?" en papelera":" en papelera"))
-    : (arr.length + (arr.length===1?" resguardo":" resguardos"));
+  // en papelera: botón para vaciar todo; en lista normal: sin contador a la izquierda
+  $("#listcount").innerHTML = showTrash && c.eliminado>0
+    ? `<button class="btn btn-ghost btn-sm danger" id="btnEmptyTrash">Vaciar papelera</button>`
+    : "";
 
   const list = $("#list");
   if (arr.length === 0){
@@ -1004,18 +1010,28 @@ $("#list").addEventListener("click", async (e)=>{
   const act = btn.dataset.act;
 
   if (act==="sign"){ openSheet(it); return; }
-  if (act==="queue"){ it.status="por_exportar"; await Store.put(it); await refresh(); toast("Marcado por exportar"); return; }
-  if (act==="unqueue"){ it.status="firmado"; await Store.put(it); await refresh(); toast("Quitado de la cola"); return; }
   if (act==="export"){ await exportItem(it); return; }
   if (act==="delete"){
     it.status="eliminado"; await Store.put(it); await refresh(); toast("Movido a la papelera"); return;
   }
-  if (act==="restore"){ it.status = Object.keys(it.signatures||{}).length ? "firmado" : "pendiente"; await Store.put(it); await refresh(); toast("Restaurado"); return; }
+  if (act==="restore"){ it.status = sigCountOf(it) ? "firmado" : "pendiente"; await Store.put(it); await refresh(); toast("Restaurado"); return; }
   if (act==="purge"){
     const ok = await confirmDialog("Borrar definitivo", `Se eliminará "${it.name}" de este dispositivo. No se puede deshacer.`, "Borrar");
     if(ok){ await Store.del(it.id); items = items.filter(x=>x.id!==it.id); render(); toast("Eliminado del dispositivo"); }
     return;
   }
+});
+
+/* vaciar toda la papelera de un clic */
+$("#listcount").addEventListener("click", async (e)=>{
+  if (!e.target.closest("#btnEmptyTrash")) return;
+  const trashed = items.filter(x=>x.status==="eliminado");
+  if (!trashed.length) return;
+  const ok = await confirmDialog("Vaciar papelera", `Se borrarán definitivamente ${trashed.length} resguardos de este dispositivo. No se puede deshacer.`, "Borrar todo");
+  if(!ok) return;
+  for (const it of trashed) await Store.del(it.id);
+  items = items.filter(x=>x.status!=="eliminado");
+  render(); toast("Papelera vaciada");
 });
 
 /* ============================================================
@@ -1058,13 +1074,15 @@ async function buildSignedBytes(it){
   return await doc.save();
 }
 
+function outNameOf(it){ return it.name.replace(/\s+/g,"_") + "-Firmados.pdf"; }
+
 async function exportItem(it){
-  if (!Object.keys(it.signatures||{}).length){ toast("Este resguardo aún no tiene firma"); return; }
+  if (!sigCountOf(it)){ toast("Este resguardo aún no tiene firma"); return; }
   toast("Generando PDF firmado…");
   let bytes;
   try{ bytes = await buildSignedBytes(it); }
   catch(e){ console.error(e); toast("No se pudo generar el PDF"); return; }
-  const outName = it.name.replace(/\s+/g,"_") + "_firmado.pdf";
+  const outName = outNameOf(it);
   const blob = new Blob([bytes], { type:"application/pdf" });
   let saved = false;
 
@@ -1088,16 +1106,52 @@ async function exportItem(it){
   }
   if (saved){
     it.exportedAt = Date.now();
-    it.status = "firmado";
+    it.status = "exportado";
     await Store.put(it);
     await refresh();
-    toast("Guardado: " + outName);
+    toast("Exportado: " + outName);
   }
 }
 
+// elige (y recuerda) la carpeta de destino con permiso de escritura
+async function getExportDir(){
+  let dir = await Store.getMeta("exportFolder");
+  if (dir){
+    try{ if ((await dir.requestPermission({ mode:"readwrite" }))!=="granted") dir=null; }catch(e){ dir=null; }
+  }
+  if (!dir){
+    if (!window.showDirectoryPicker) return null;
+    dir = await window.showDirectoryPicker({ id:"resguardos-out", mode:"readwrite" });
+    await Store.setMeta("exportFolder", dir);
+  }
+  return dir;
+}
+
+// Exportar TODOS los firmados a la carpeta seleccionada, con nombre + -Firmados
 $("#btnExportAll").addEventListener("click", async ()=>{
-  const queue = items.filter(it=>it.status==="por_exportar");
-  for (const it of queue){ await exportItem(it); }
+  const ready = items.filter(it=>it.status==="firmado");
+  if (!ready.length) return;
+  let dir = null;
+  try{ dir = await getExportDir(); }
+  catch(e){ if(e && e.name==="AbortError") return; }
+
+  if (dir){
+    let ok=0;
+    toast("Exportando a la carpeta…");
+    for (const it of ready){
+      try{
+        const bytes = await buildSignedBytes(it);
+        const fh = await dir.getFileHandle(outNameOf(it), { create:true });
+        const w = await fh.createWritable(); await w.write(new Blob([bytes],{type:"application/pdf"})); await w.close();
+        it.exportedAt = Date.now(); it.status="exportado"; await Store.put(it); ok++;
+      }catch(e){ console.error(e); }
+    }
+    await refresh();
+    toast(ok ? `${ok} exportados a la carpeta` : "No se pudo exportar a la carpeta");
+  } else {
+    // sin acceso a carpeta (p. ej. iOS): descarga uno por uno
+    for (const it of ready){ await exportItem(it); }
+  }
 });
 
 /* ============================================================
@@ -1113,58 +1167,11 @@ const stage     = $("#stage");
 const stampsEl  = $("#stamps");
 
 const clamp = (v,a,b)=> Math.max(a, Math.min(b, v));
-function baseWidth(){ return parseFloat($("#penWidth").value) || 2.6; }
+function baseWidth(){ return parseFloat($("#penWidth").value) || 4; }
 function imgAspect(src){
   return new Promise(res=>{ const im=new Image(); im.onload=()=>res((im.naturalWidth/im.naturalHeight)||2.2); im.onerror=()=>res(2.2); im.src=src; });
 }
 function loadImg(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
-const MONO_FONT = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
-
-/* ---------- Fecha del día DD◦MM◦AAAA (separador dibujado como anillo) ---------- */
-function dateParts(){
-  const d = new Date();
-  return [ String(d.getDate()).padStart(2,"0"), String(d.getMonth()+1).padStart(2,"0"), String(d.getFullYear()) ];
-}
-function dateString(){ return dateParts().join("◦"); }
-function dateLayout(h){
-  const fontPx = Math.round(h*0.30);
-  const ctx = document.createElement("canvas").getContext("2d");
-  ctx.font = `600 ${fontPx}px ${MONO_FONT}`;
-  const parts = dateParts(), ringGap = fontPx*0.40;
-  let w = 0; parts.forEach((p,i)=>{ w += ctx.measureText(p).width; if(i<parts.length-1) w += ringGap*2; });
-  return { fontPx, parts, ringGap, width: Math.ceil(w) };
-}
-function drawDate(g, x, baselineY, h){
-  const L = dateLayout(h);
-  g.fillStyle = "#111"; g.strokeStyle = "#111"; g.textBaseline = "alphabetic";
-  g.font = `600 ${L.fontPx}px ${MONO_FONT}`;
-  let cx = x;
-  L.parts.forEach((p,i)=>{
-    g.fillText(p, cx, baselineY); cx += g.measureText(p).width;
-    if (i < L.parts.length-1){
-      cx += L.ringGap;
-      g.beginPath(); g.lineWidth = Math.max(1.4, L.fontPx*0.05);
-      g.arc(cx, baselineY - L.fontPx*0.30, L.fontPx*0.13, 0, Math.PI*2); g.stroke();
-      cx += L.ringGap;
-    }
-  });
-  return cx;
-}
-/* compone la firma con la fecha al lado, en un solo PNG nítido */
-async function composeSignature(sigPng, sigAspect, withDate){
-  if (!withDate) return { png:sigPng, aspect:sigAspect };
-  const img = await loadImg(sigPng);
-  const H = 240;
-  const sigW = Math.round(H*sigAspect);
-  const L = dateLayout(H);
-  const gap = Math.round(H*0.16), padR = Math.round(H*0.06);
-  const W = sigW + gap + L.width + padR;
-  const c = document.createElement("canvas"); c.width = W; c.height = H;
-  const g = c.getContext("2d");
-  g.drawImage(img, 0, 0, sigW, H);
-  drawDate(g, sigW + gap, Math.round(H*0.62), H);
-  return { png: c.toDataURL("image/png"), aspect: W/H };
-}
 
 /* ---------- Detección de la línea de firma del resguardante (primero a la izquierda) ---------- */
 async function detectSignatureSpots(pageIdx0){
@@ -1243,7 +1250,6 @@ function renderITPick(){
   list.innerHTML = sigProfiles.map(p=>`
     <button class="${p.png?"ready":""}" data-pid="${p.id}">
       <span class="st"></span>${escapeHtml(p.name)}${p.png?"":" · sin firma"}
-      ${p.role?`<span class="role">${escapeHtml(p.role)}</span>`:""}
     </button>`).join("");
 }
 function openITPick(){ renderITPick(); $("#itPickBg").classList.add("show"); }
@@ -1281,8 +1287,8 @@ async function openSheet(it){
       sign.stamps[i] = list;
     }
     $("#sheetName").textContent = it.name;
-    if (it.firmasReq == null) it.firmasReq = 3;
-    $("#reqVal").textContent = it.firmasReq;
+    it.firmasReq = 3;                 // fijo: resguardante + Elaboró + VoBo
+    updateReq();
     renderITPick();
     sheet.classList.add("show"); sheet.setAttribute("aria-hidden","false");
     document.body.style.overflow = "hidden";
@@ -1490,7 +1496,7 @@ function attachStamp(el, s){
     const list = sign.stamps[sign.pageIndex] || [];
     const idx = list.findIndex(x=>x.id===s.id);
     if (idx>=0) list.splice(idx,1);
-    sign.dirty = true; sign.selId = null; renderStamps();
+    sign.dirty = true; sign.selId = null; renderStamps(); updateReq();
   });
 }
 
@@ -1506,12 +1512,20 @@ function placeStampAtSpot(png, aspect){
   const st = { id:uid(), png, aspect, nw, nh, nx, ny };
   sign.stamps[i].push(st);
   sign.selId = st.id; sign.dirty = true;
-  renderStamps();
+  renderStamps(); updateReq();
 }
-// compone (firma + fecha del día si withDate) y coloca
-async function placeSignature(raw, withDate){
-  const comp = await composeSignature(raw.png, raw.aspect, withDate);
-  placeStampAtSpot(comp.png, comp.aspect);
+// coloca la firma (sin fecha)
+function placeSignature(raw){ placeStampAtSpot(raw.png, raw.aspect); }
+
+// "Requiere N/3" — N = firmas colocadas en la sesión
+function sessionSigCount(){
+  if(!sign) return 0;
+  let n=0; for(const k of Object.keys(sign.stamps||{})) n += (sign.stamps[k]||[]).length;
+  return n;
+}
+function updateReq(){
+  if(!sign) return;
+  $("#reqVal").textContent = sessionSigCount() + "/" + (sign.item.firmasReq || 3);
 }
 
 /* ---------- Recuadro para firmar (pad) ---------- */
@@ -1521,7 +1535,6 @@ let padTarget = null;   // id de perfil IT si se está capturando para alguien
 
 function openPad(forProfileId){
   padTarget = forProfileId || null;
-  $("#padDatePreview").textContent = dateString();
   padBg.classList.add("show"); padBg.setAttribute("aria-hidden","false");
   $("#padPh").style.display = "block";
   requestAnimationFrame(()=>{
@@ -1560,8 +1573,7 @@ $("#penWidth").addEventListener("input", redrawPad);
 
 $("#padUse").addEventListener("click", async ()=>{
   if (!padStrokes.length){ toast("Dibuja tu firma primero"); return; }
-  const raw = trimSignature();              // firma sin fecha
-  const withDate = $("#padDate").checked;
+  const raw = trimSignature();
   const target = padTarget;
   if (target){
     await saveProfileSignature(target, raw); // guarda la firma de la persona de IT
@@ -1569,7 +1581,7 @@ $("#padUse").addEventListener("click", async ()=>{
     sign.lastSig = raw;
   }
   closePad();
-  await placeSignature(raw, withDate);
+  placeSignature(raw);
   toast("Arrastra la firma a la línea");
 });
 $("#btnOpenPad").addEventListener("click", ()=>{ if(sign) openPad(); });
@@ -1584,20 +1596,9 @@ $("#itPickList").addEventListener("click", async (e)=>{
   const p = sigProfiles.find(x=>x.id===item.dataset.pid); if(!p) return;
   if (!p.png){ closeITPick(); toast(`Captura primero la firma de ${p.name}`); openPad(p.id); return; }
   closeITPick();
-  await placeSignature({ png:p.png, aspect:p.aspect }, true);
+  placeSignature({ png:p.png, aspect:p.aspect });
   toast(`Firma de ${p.name} colocada`);
 });
-
-/* firmas requeridas (Firmado N/R) */
-function setReq(d){
-  if(!sign) return;
-  const it = sign.item;
-  it.firmasReq = clamp((it.firmasReq||3) + d, 1, 6);
-  $("#reqVal").textContent = it.firmasReq;
-  sign.dirty = true;
-}
-$("#reqMinus").addEventListener("click", ()=> setReq(-1));
-$("#reqPlus").addEventListener("click", ()=> setReq(1));
 
 /* gestor de firmas IT */
 function openSigMgr(){ renderSigMgr(); $("#sigMgrBg").classList.add("show"); }
@@ -1644,7 +1645,7 @@ $("#btnSaveSig").addEventListener("click", async ()=>{
   }
   const total = Object.keys(it.signatures).length;
   if (total === 0){ it.status = "pendiente"; it.signedAt = null; }
-  else { if (it.status==="pendiente" || it.status==="eliminado") it.status = "firmado"; it.signedAt = Date.now(); }
+  else { if (it.status!=="exportado" || sign.dirty){ it.status = "firmado"; } it.signedAt = Date.now(); }
   await Store.put(it);
   sign.dirty = false;
   await refresh(); closeSheet();
@@ -1768,7 +1769,11 @@ $("#backupInput").addEventListener("change", async (e)=>{
 /* ============================================================
    Arranque
 ============================================================ */
-async function refresh(){ items = await Store.getAll(); render(); }
+async function refresh(){
+  items = await Store.getAll();
+  for (const it of items){ if (it.status==="por_exportar") it.status="exportado"; }
+  render();
+}
 
 (async function init(){
   await loadProfiles();

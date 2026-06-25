@@ -2,7 +2,7 @@
    - Cache-first del "app shell" + librerías (uso sin conexión).
    - Recibe PDFs compartidos desde otra app (Web Share Target) y los guarda
      directo en IndexedDB, sin servidor. Sube CACHE al cambiar index.html. */
-const CACHE = "resguardos-v5";
+const CACHE = "resguardos-v6";
 
 const ASSETS = [
   "./",
