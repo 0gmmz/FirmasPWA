@@ -2,18 +2,20 @@
    - Cache-first del "app shell" + librerías (uso sin conexión).
    - Recibe PDFs compartidos desde otra app (Web Share Target) y los guarda
      directo en IndexedDB, sin servidor. Sube CACHE al cambiar index.html. */
-const CACHE = "resguardos-v6";
+const CACHE = "resguardos-v7";
 
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./supabase-sync.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-512.png",
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js",
+  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ];
 
 self.addEventListener("install", (e)=>{

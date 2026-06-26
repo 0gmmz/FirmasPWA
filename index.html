@@ -311,6 +311,21 @@
   .backup-actions .btn{ width:100%; justify-content:center; padding:13px; }
   .backup-meta{ font-size:11.5px !important; color:var(--faint) !important; margin:12px 0 0 !important; font-family:var(--mono); }
 
+  /* nube / cuenta */
+  .cloud-box{ border:1px solid var(--border); border-radius:12px; padding:11px 12px; margin-top:12px; }
+  .cloud-status{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink); }
+  .cloud-dot{ width:9px; height:9px; border-radius:50%; background:var(--faint); flex:0 0 auto; }
+  .cloud-dot.on{ background:var(--green); } .cloud-dot.off{ background:var(--red); } .cloud-dot.sync{ background:var(--amber); }
+  .cloud-actions{ display:flex; gap:7px; margin-top:10px; }
+  .cloud-actions .btn{ flex:1; justify-content:center; }
+
+  .loginform{ display:flex; flex-direction:column; gap:9px; }
+  .loginform input{ width:100%; border:1px solid var(--border-strong); background:var(--surface); color:var(--ink);
+    border-radius:10px; padding:12px; font-size:15px; }
+  .loginform input::placeholder{ color:var(--faint); }
+  .login-msg{ font-size:12.5px; color:var(--red); min-height:0; }
+  .login-msg:empty{ display:none; }
+
   /* etiqueta firmado parcial */
   .b-parcial{ background:var(--amber-bg); color:#92400E; } .b-parcial .dot{ background:var(--green); }
 
@@ -557,7 +572,37 @@
       </button>
     </div>
     <p class="backup-meta" id="backupMeta"></p>
+
+    <div class="cloud-box">
+      <div class="cloud-status"><span class="cloud-dot" id="cloudDot"></span><span id="cloudStatus">Sin conexión a la nube</span></div>
+      <div class="cloud-actions">
+        <button class="btn btn-ghost btn-sm" id="btnSyncNow">Sincronizar ahora</button>
+        <button class="btn btn-ghost btn-sm" id="btnCloudAuth">Iniciar sesión</button>
+      </div>
+    </div>
+
     <div class="row" style="margin-top:8px"><button class="btn btn-ghost btn-sm" id="backupClose">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Inicio de sesión (nube) -->
+<div class="modal-bg" id="loginBg">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Iniciar sesión" style="max-width:380px">
+    <div class="brand" style="gap:9px; margin-bottom:6px">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true" style="width:26px;height:26px">
+        <rect x="1" y="1" width="30" height="30" rx="8" fill="#1C1C1E"/>
+        <path d="M8 21c3-1 4.5-9 6-9s1 7 2.5 7S19 12 21 12s2 5 3 5" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h3 style="margin:0">Iniciar sesión</h3>
+    </div>
+    <p>Entra con tu cuenta de IT para sincronizar los resguardos entre dispositivos.</p>
+    <div class="loginform">
+      <input id="loginEmail" type="email" inputmode="email" autocomplete="username" placeholder="correo@vidanta.com" />
+      <input id="loginPass" type="password" autocomplete="current-password" placeholder="contraseña" />
+      <div class="login-msg" id="loginMsg"></div>
+      <button class="btn btn-primary" id="loginSubmit" style="width:100%; justify-content:center; padding:12px">Entrar</button>
+      <button class="btn btn-ghost btn-sm" id="loginSkip" style="width:100%; justify-content:center">Usar solo en este dispositivo</button>
+    </div>
   </div>
 </div>
 <input type="file" id="backupInput" accept="application/json,.json" class="sr-only" />
@@ -580,6 +625,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-sync.js"></script>
 <script>
 (function(){
 "use strict";
@@ -734,6 +781,7 @@ async function addPdfFile(file){
     exportedAt: null,
   };
   await Store.put(item);
+  cloudPush(item);     // sube a la nube (si hay sesión); si no, queda pendiente
   return item;
 }
 
@@ -1012,12 +1060,12 @@ $("#list").addEventListener("click", async (e)=>{
   if (act==="sign"){ openSheet(it); return; }
   if (act==="export"){ await exportItem(it); return; }
   if (act==="delete"){
-    it.status="eliminado"; await Store.put(it); await refresh(); toast("Movido a la papelera"); return;
+    it.status="eliminado"; await Store.put(it); cloudPush(it); await refresh(); toast("Movido a la papelera"); return;
   }
-  if (act==="restore"){ it.status = sigCountOf(it) ? "firmado" : "pendiente"; await Store.put(it); await refresh(); toast("Restaurado"); return; }
+  if (act==="restore"){ it.status = sigCountOf(it) ? "firmado" : "pendiente"; await Store.put(it); cloudPush(it); await refresh(); toast("Restaurado"); return; }
   if (act==="purge"){
     const ok = await confirmDialog("Borrar definitivo", `Se eliminará "${it.name}" de este dispositivo. No se puede deshacer.`, "Borrar");
-    if(ok){ await Store.del(it.id); items = items.filter(x=>x.id!==it.id); render(); toast("Eliminado del dispositivo"); }
+    if(ok){ await cloudRemove(it); await Store.del(it.id); items = items.filter(x=>x.id!==it.id); render(); toast("Eliminado del dispositivo"); }
     return;
   }
 });
@@ -1029,7 +1077,7 @@ $("#listcount").addEventListener("click", async (e)=>{
   if (!trashed.length) return;
   const ok = await confirmDialog("Vaciar papelera", `Se borrarán definitivamente ${trashed.length} resguardos de este dispositivo. No se puede deshacer.`, "Borrar todo");
   if(!ok) return;
-  for (const it of trashed) await Store.del(it.id);
+  for (const it of trashed){ await cloudRemove(it); await Store.del(it.id); }
   items = items.filter(x=>x.status!=="eliminado");
   render(); toast("Papelera vaciada");
 });
@@ -1078,6 +1126,8 @@ function outNameOf(it){ return it.name.replace(/\s+/g,"_") + "-Firmados.pdf"; }
 
 async function exportItem(it){
   if (!sigCountOf(it)){ toast("Este resguardo aún no tiene firma"); return; }
+  if (!it.pdf){ await ensurePdf(it); }
+  if (!it.pdf){ toast("No se pudo obtener el PDF (¿sin conexión?)"); return; }
   toast("Generando PDF firmado…");
   let bytes;
   try{ bytes = await buildSignedBytes(it); }
@@ -1108,6 +1158,7 @@ async function exportItem(it){
     it.exportedAt = Date.now();
     it.status = "exportado";
     await Store.put(it);
+    cloudPush(it);
     await refresh();
     toast("Exportado: " + outName);
   }
@@ -1140,10 +1191,12 @@ $("#btnExportAll").addEventListener("click", async ()=>{
     toast("Exportando a la carpeta…");
     for (const it of ready){
       try{
+        if (!it.pdf){ await ensurePdf(it); }
+        if (!it.pdf) continue;
         const bytes = await buildSignedBytes(it);
         const fh = await dir.getFileHandle(outNameOf(it), { create:true });
         const w = await fh.createWritable(); await w.write(new Blob([bytes],{type:"application/pdf"})); await w.close();
-        it.exportedAt = Date.now(); it.status="exportado"; await Store.put(it); ok++;
+        it.exportedAt = Date.now(); it.status="exportado"; await Store.put(it); cloudPush(it); ok++;
       }catch(e){ console.error(e); }
     }
     await refresh();
@@ -1272,6 +1325,8 @@ let sign = null;
 
 async function openSheet(it){
   try{
+    if (!it.pdf){ toast("Descargando PDF…"); await ensurePdf(it); }
+    if (!it.pdf){ toast("No se pudo obtener el PDF (¿sin conexión?)"); return; }
     const data = it.pdf.slice(0);
     const pdfDoc = await pdfjsLib.getDocument({ data }).promise;
     if (it.pages == null){ it.pages = pdfDoc.numPages; await Store.put(it); }
@@ -1647,6 +1702,7 @@ $("#btnSaveSig").addEventListener("click", async ()=>{
   if (total === 0){ it.status = "pendiente"; it.signedAt = null; }
   else { if (it.status!=="exportado" || sign.dirty){ it.status = "firmado"; } it.signedAt = Date.now(); }
   await Store.put(it);
+  cloudPush(it);
   sign.dirty = false;
   await refresh(); closeSheet();
   toast(total ? "Firma guardada" : "Firma eliminada");
@@ -1710,6 +1766,8 @@ function b64ToAb(b64){
 function openBackup(){
   const total=items.filter(i=>i.status!=="eliminado").length;
   $("#backupMeta").textContent = `${total} resguardos en este dispositivo · ${sigProfiles.filter(p=>p.png).length} firmas IT guardadas`;
+  if (!window.Cloud) setCloudStatus("off","Nube no disponible");
+  else updateCloudUI();
   $("#backupBg").classList.add("show");
 }
 $("#btnMore").addEventListener("click", openBackup);
@@ -1753,6 +1811,7 @@ $("#backupInput").addEventListener("change", async (e)=>{
     for (const raw of data.items){
       const it = { ...raw, pdf: raw.pdf ? b64ToAb(raw.pdf) : null };
       if (it.firmasReq == null) it.firmasReq = 3;
+      it.updatedAt = Date.now(); it._dirty = true;
       await Store.put(it);
     }
     if (Array.isArray(data.sigProfiles) && data.sigProfiles.length){
@@ -1762,6 +1821,7 @@ $("#backupInput").addEventListener("change", async (e)=>{
     }
     $("#backupBg").classList.remove("show");
     await refresh();
+    if (cloud.user) syncAll();
     toast("Respaldo restaurado");
   }catch(err){ console.error(err); toast("Archivo de respaldo no válido"); }
 });
@@ -1775,12 +1835,138 @@ async function refresh(){
   render();
 }
 
+/* ============================================================
+   Sincronización con la nube (Supabase) — aditiva y tolerante a fallos.
+   La app sigue 100% funcional sin conexión; la nube solo agrega sync.
+============================================================ */
+const cloud = { user:null, channel:null, syncing:false };
+
+function setCloudStatus(state, text){
+  const dot = $("#cloudDot"), st = $("#cloudStatus"), authBtn = $("#btnCloudAuth");
+  if (dot){ dot.className = "cloud-dot " + (state||""); }
+  if (st) st.textContent = text;
+  if (authBtn) authBtn.textContent = cloud.user ? "Cerrar sesión" : "Iniciar sesión";
+}
+
+async function cloudInit(){
+  if (!window.Cloud){ setCloudStatus("off","Nube no disponible"); return; }
+  try{
+    cloud.user = await window.Cloud.user();
+  }catch(e){ cloud.user = null; }
+  window.Cloud.onAuthChange(u=>{ cloud.user = u; updateCloudUI(); });
+
+  if (cloud.user){
+    updateCloudUI();
+    await syncAll();
+    startRealtime();
+  } else if (navigator.onLine){
+    showLogin();           // pide sesión (se puede omitir)
+  } else {
+    setCloudStatus("off","Sin conexión");
+  }
+}
+function updateCloudUI(){
+  if (cloud.user) setCloudStatus("on", "Conectado: " + (cloud.user.email||"cuenta"));
+  else setCloudStatus("off", "Sin sesión");
+}
+
+function showLogin(){ $("#loginMsg").textContent=""; $("#loginBg").classList.add("show"); }
+function hideLogin(){ $("#loginBg").classList.remove("show"); }
+$("#loginSkip").addEventListener("click", hideLogin);
+$("#loginSubmit").addEventListener("click", async ()=>{
+  const email = $("#loginEmail").value.trim(), pass = $("#loginPass").value;
+  if (!email || !pass){ $("#loginMsg").textContent = "Escribe correo y contraseña."; return; }
+  $("#loginMsg").textContent = "Entrando…";
+  try{
+    cloud.user = await window.Cloud.signIn(email, pass);
+    hideLogin(); updateCloudUI(); toast("Sesión iniciada");
+    await syncAll(); startRealtime();
+  }catch(e){ $("#loginMsg").textContent = "No se pudo entrar. Revisa los datos."; }
+});
+$("#btnCloudAuth").addEventListener("click", async ()=>{
+  if (!window.Cloud){ toast("Nube no disponible"); return; }
+  if (cloud.user){
+    await window.Cloud.signOut(); cloud.user=null; updateCloudUI(); toast("Sesión cerrada");
+  } else { $("#backupBg").classList.remove("show"); showLogin(); }
+});
+$("#btnSyncNow").addEventListener("click", async ()=>{
+  if (!cloud.user){ toast("Inicia sesión primero"); return; }
+  await syncAll(); toast("Sincronizado");
+});
+
+// dos vías: baja remoto (gana el más reciente) y sube lo local pendiente
+async function syncAll(){
+  if (!window.Cloud || !cloud.user || cloud.syncing) return;
+  cloud.syncing = true; setCloudStatus("sync","Sincronizando…");
+  try{
+    const since = await Store.getMeta("lastSync");
+    let remote = [];
+    try{ remote = await window.Cloud.pull(since); }catch(e){ remote=[]; }
+    const remoteById = {};
+    let maxTs = since || null;
+    for (const r of remote){
+      remoteById[r.id] = r;
+      const rTs = r.actualizado ? Date.parse(r.actualizado) : 0;
+      const local = items.find(x=>x.id===r.id);
+      if (!local || (local.updatedAt||0) < rTs){
+        const merged = Object.assign({}, r, { pdf: (local && local.pdf) ? local.pdf : null, updatedAt: rTs, _dirty:false });
+        delete merged.actualizado;
+        await Store.put(merged);
+      }
+      if (!maxTs || (r.actualizado && r.actualizado > maxTs)) maxTs = r.actualizado;
+    }
+    // sube lo local que falte o sea más nuevo o quedó pendiente
+    for (const it of items){
+      const r = remoteById[it.id];
+      const rTs = r && r.actualizado ? Date.parse(r.actualizado) : -1;
+      if (!r || it._dirty || (it.updatedAt||0) > rTs){
+        await cloudPush(it, true);
+      }
+    }
+    if (maxTs) await Store.setMeta("lastSync", maxTs);
+    await refresh();
+    updateCloudUI();
+  }catch(e){ console.error(e); setCloudStatus("off","Error al sincronizar"); }
+  finally{ cloud.syncing = false; }
+}
+
+// empuja un resguardo; si falla, lo deja marcado para reintentar
+async function cloudPush(item, silent){
+  item.updatedAt = item.updatedAt || Date.now();
+  if (!window.Cloud || !cloud.user){ item._dirty = true; await Store.put(item); return; }
+  try{
+    const orig = await window.Cloud.push(item);
+    if (orig && !item.original_path){ item.original_path = orig; }
+    item._dirty = false;
+  }catch(e){ item._dirty = true; if(!silent) console.error(e); }
+  await Store.put(item);
+}
+async function cloudRemove(item){
+  if (!window.Cloud || !cloud.user) return;
+  try{ await window.Cloud.remove(item); }catch(e){ /* ignora */ }
+}
+// baja el PDF original si este equipo no lo tiene aún
+async function ensurePdf(item){
+  if (item.pdf || !item.original_path || !window.Cloud || !cloud.user) return item.pdf || null;
+  try{
+    const buf = await window.Cloud.getPdf(item);
+    if (buf){ item.pdf = buf; await Store.put(item); }
+  }catch(e){ /* sin conexión: no se puede abrir */ }
+  return item.pdf || null;
+}
+function startRealtime(){
+  if (!window.Cloud || cloud.channel) return;
+  try{ cloud.channel = window.Cloud.subscribe(()=>{ clearTimeout(cloud._t); cloud._t=setTimeout(syncAll, 800); }); }catch(e){}
+}
+window.addEventListener("online", ()=>{ if(cloud.user) syncAll(); });
+
 (async function init(){
   await loadProfiles();
   await refresh();
   await renderFolderBar();
   autoSyncOnLaunch();
   try{ if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+  cloudInit();
 })();
 
 /* ============================================================
